@@ -490,9 +490,6 @@ public:
 		if (_mavlink_ulog) { _mavlink_ulog_stop_requested = true; }
 	}
 
-
-	void set_uorb_main_fd(int fd, unsigned int interval);
-
 	bool ftp_enabled() const { return _ftp_on; }
 
 	bool hash_check_enabled() const { return _param_mav_hash_chk_en.get(); }
