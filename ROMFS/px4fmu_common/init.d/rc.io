@@ -15,7 +15,7 @@ then
 	if px4io start $HIL_ARG
 	then
 		# Allow PX4IO to recover from midair restarts.
-		px4io recovery
+		#px4io recovery
 	else
 		echo "PX4IO start failed"
 		tune_control play -t 18 # PROG_PX4IO_ERR

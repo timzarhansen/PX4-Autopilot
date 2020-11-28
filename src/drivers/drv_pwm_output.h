@@ -129,22 +129,6 @@ struct pwm_output_values {
  */
 typedef uint16_t	servo_position_t;
 
-/**
- * RC config values for a channel
- *
- * This allows for PX4IO_PAGE_RC_CONFIG values to be set without a
- * param_get() dependency
- */
-struct pwm_output_rc_config {
-	uint8_t channel;
-	uint16_t rc_min;
-	uint16_t rc_trim;
-	uint16_t rc_max;
-	uint16_t rc_dz;
-	uint16_t rc_assignment;
-	bool     rc_reverse;
-};
-
 /*
  * ioctl() definitions
  *
@@ -240,9 +224,6 @@ struct pwm_output_rc_config {
 
 /** force safety switch on (to enable use of safety switch) */
 #define PWM_SERVO_SET_FORCE_SAFETY_ON		_PX4_IOC(_PWM_SERVO_BASE, 28)
-
-/** setup OVERRIDE_IMMEDIATE behaviour on FMU fail */
-#define PWM_SERVO_SET_OVERRIDE_IMMEDIATE	_PX4_IOC(_PWM_SERVO_BASE, 32)
 
 /** set SBUS output frame rate in Hz */
 #define PWM_SERVO_SET_SBUS_RATE			_PX4_IOC(_PWM_SERVO_BASE, 33)
