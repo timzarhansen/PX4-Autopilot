@@ -59,6 +59,7 @@
 #include <lib/perf/perf_counter.h>
 #include <lib/rc/dsm.h>
 #include <lib/systemlib/mavlink_log.h>
+#include <px4_platform_common/module_params.h>
 #include <uORB/Publication.hpp>
 #include <uORB/PublicationMulti.hpp>
 #include <uORB/Publication.hpp>
@@ -356,6 +357,18 @@ private:
 	 * @param dsmMode	0:dsm2, 1:dsmx
 	 */
 	void			dsm_bind_ioctl(int dsmMode);
+
+	DEFINE_PARAMETERS(
+		(ParamInt<px4::params::MAV_COMP_ID>) _param_mav_comp_id,
+		(ParamInt<px4::params::MAV_SYS_ID>) _param_mav_sys_id,
+		(ParamInt<px4::params::PWM_SBUS_MODE>) _param_pwm_sbus_mode,
+		(ParamInt<px4::params::RC_MAP_KILL_SW>) _param_rc_map_kill_sw,
+		(ParamInt<px4::params::RC_RSSI_PWM_CHAN>) _param_rc_rssi_pwm_chan,
+		(ParamInt<px4::params::RC_RSSI_PWM_MAX>) _param_rc_rssi_pwm_max,
+		(ParamInt<px4::params::RC_RSSI_PWM_MIN>) _param_rc_rssi_pwm_min,
+		(ParamInt<px4::params::SENS_EN_THERMAL>) _param_sens_en_themal,
+		(ParamInt<px4::params::SYS_RESTART_TYPE>) _param_sys_restart_type
+	)
 };
 
 namespace
@@ -845,6 +858,8 @@ void PX4IO::Run()
 				_parameter_update_sub.copy(&pupdate);
 
 				_param_update_force = false;
+
+				ModuleParams::updateParams();
 
 				if (!_rc_handling_disabled) {
 					/* re-upload RC input config as it may have changed */
