@@ -50,8 +50,6 @@
 
 #include "protocol.h"
 
-#include <output_limit/output_limit.h>
-
 /*
  * Constants and limits.
  */
@@ -80,7 +78,6 @@ extern volatile uint16_t	r_page_status[];	/* PX4IO_PAGE_STATUS */
 extern uint16_t			r_page_servos[];	/* PX4IO_PAGE_SERVOS */
 extern uint16_t			r_page_direct_pwm[];	/* PX4IO_PAGE_DIRECT_PWM */
 extern uint16_t			r_page_raw_rc_input[];	/* PX4IO_PAGE_RAW_RC_INPUT */
-extern uint16_t			r_page_adc[];		/* PX4IO_PAGE_RAW_ADC_INPUT */
 
 extern volatile uint16_t	r_page_setup[];		/* PX4IO_PAGE_SETUP */
 extern uint16_t			r_page_rc_input_config[]; /* PX4IO_PAGE_RC_INPUT_CONFIG */

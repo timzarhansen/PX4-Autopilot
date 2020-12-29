@@ -121,18 +121,12 @@
 #define PX4IO_P_STATUS_FLAGS_RC_SUMD		(1 << 15) /* SUMD input is valid */
 
 #define PX4IO_P_STATUS_ALARMS			3	 /* alarm flags - alarms latch, write 1 to a bit to clear it */
-#define PX4IO_P_STATUS_ALARMS_VBATT_LOW		(1 << 0) /* [1] VBatt is very close to regulator dropout */
-#define PX4IO_P_STATUS_ALARMS_TEMPERATURE	(1 << 1) /* board temperature is high */
-#define PX4IO_P_STATUS_ALARMS_SERVO_CURRENT	(1 << 2) /* [1] servo current limit was exceeded */
-#define PX4IO_P_STATUS_ALARMS_ACC_CURRENT	(1 << 3) /* [1] accessory current limit was exceeded */
-#define PX4IO_P_STATUS_ALARMS_FMU_LOST		(1 << 4) /* timed out waiting for controls from FMU */
-#define PX4IO_P_STATUS_ALARMS_RC_LOST		(1 << 5) /* timed out waiting for RC input */
-#define PX4IO_P_STATUS_ALARMS_PWM_ERROR		(1 << 6) /* PWM configuration or output was bad */
-#define PX4IO_P_STATUS_ALARMS_VSERVO_FAULT	(1 << 7) /* [2] VServo was out of the valid range (2.5 - 5.5 V) */
+#define PX4IO_P_STATUS_ALARMS_FMU_LOST		(1 << 1) /* timed out waiting for controls from FMU */
+#define PX4IO_P_STATUS_ALARMS_RC_LOST		(1 << 2) /* timed out waiting for RC input */
+#define PX4IO_P_STATUS_ALARMS_PWM_ERROR		(1 << 3) /* PWM configuration or output was bad */
 
 #define PX4IO_P_STATUS_VSERVO			6	/* [2] servo rail voltage in mV */
 #define PX4IO_P_STATUS_VRSSI			7	/* [2] RSSI voltage */
-#define PX4IO_P_STATUS_PRSSI			8	/* [2] RSSI PWM value */
 
 /* array of PWM servo output values, microseconds */
 #define PX4IO_PAGE_SERVOS			3	/* 0..CONFIG_ACTUATOR_COUNT-1 */
@@ -169,17 +163,15 @@
 #define PX4IO_P_SETUP_FEATURES_ADC_RSSI		(1 << 3) /**< enable ADC RSSI parsing */
 
 #define PX4IO_P_SETUP_ARMING			1	 /* arming controls */
-#define PX4IO_P_SETUP_ARMING_IO_ARM_OK		(1 << 0) /* OK to arm the IO side */
-#define PX4IO_P_SETUP_ARMING_FMU_ARMED		(1 << 1) /* FMU is already armed */
-#define PX4IO_P_SETUP_ARMING_FMU_PREARMED	(1 << 2) /* FMU is already prearmed */
-
-#define PX4IO_P_SETUP_ARMING_FAILSAFE_CUSTOM      (1 << 4) /* use custom failsafe values, not 0 values of mixer */
-#define PX4IO_P_SETUP_ARMING_INAIR_RESTART_OK     (1 << 5) /* OK to try in-air restart */
-
-#define PX4IO_P_SETUP_ARMING_RC_HANDLING_DISABLED (1 << 7) /* Disable the IO-internal evaluation of the RC */
-#define PX4IO_P_SETUP_ARMING_LOCKDOWN             (1 << 8) /* If set, the system operates normally, but won't actuate any servos */
-#define PX4IO_P_SETUP_ARMING_FORCE_FAILSAFE       (1 << 9) /* If set, the system will always output the failsafe values */
-#define PX4IO_P_SETUP_ARMING_TERMINATION_FAILSAFE (1 << 10) /* If set, the system will never return from a failsafe, but remain in failsafe once triggered. */
+#define PX4IO_P_SETUP_ARMING_IO_ARM_OK		  (1 << 0) /* OK to arm the IO side */
+#define PX4IO_P_SETUP_ARMING_FMU_ARMED		  (1 << 1) /* FMU is already armed */
+#define PX4IO_P_SETUP_ARMING_FMU_PREARMED	  (1 << 2) /* FMU is already prearmed */
+#define PX4IO_P_SETUP_ARMING_FAILSAFE_CUSTOM      (1 << 3) /* use custom failsafe values, not 0 values of mixer */
+#define PX4IO_P_SETUP_ARMING_INAIR_RESTART_OK     (1 << 4) /* OK to try in-air restart */
+#define PX4IO_P_SETUP_ARMING_RC_HANDLING_DISABLED (1 << 5) /* Disable the IO-internal evaluation of the RC */
+#define PX4IO_P_SETUP_ARMING_LOCKDOWN             (1 << 6) /* If set, the system operates normally, but won't actuate any servos */
+#define PX4IO_P_SETUP_ARMING_FORCE_FAILSAFE       (1 << 7) /* If set, the system will always output the failsafe values */
+#define PX4IO_P_SETUP_ARMING_TERMINATION_FAILSAFE (1 << 8) /* If set, the system will never return from a failsafe, but remain in failsafe once triggered. */
 
 #define PX4IO_P_SETUP_PWM_RATES			2	/* bitmask, 0 = low rate, 1 = high rate */
 #define PX4IO_P_SETUP_PWM_DEFAULTRATE		3	/* 'low' PWM frame output rate in Hz */

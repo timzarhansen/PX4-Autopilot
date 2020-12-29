@@ -51,13 +51,7 @@
 #include <drivers/drv_pwm_output.h>
 #include <drivers/drv_hrt.h>
 
-#include <lib/mixer/MixerGroup.hpp>
-#include <output_limit/output_limit.h>
 #include <rc/sbus.h>
-
-#include <uORB/topics/actuator_controls.h>
-
-#include "mixer.h"
 
 extern "C" {
 	/* #define DEBUG */

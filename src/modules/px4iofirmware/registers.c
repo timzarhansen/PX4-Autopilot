@@ -88,7 +88,6 @@ volatile uint16_t	r_page_status[] = {
 	[PX4IO_P_STATUS_ALARMS]			= 0,
 	[PX4IO_P_STATUS_VSERVO]			= 0,
 	[PX4IO_P_STATUS_VRSSI]			= 0,
-	[PX4IO_P_STATUS_PRSSI]			= 0,
 };
 
 /**
@@ -623,49 +622,6 @@ registers_get(uint8_t page, uint8_t offset, uint16_t **values, unsigned *num_val
 
 		/* PX4IO_P_STATUS_ALARMS maintained externally */
 
-#ifdef ADC_VBATT
-		/* PX4IO_P_STATUS_VBATT */
-		{
-			/*
-			 * Coefficients here derived by measurement of the 5-16V
-			 * range on one unit, validated on sample points of another unit
-			 *
-			 * Data in Tools/tests-host/data folder.
-			 *
-			 * measured slope = 0.004585267878277 (int: 4585)
-			 * nominal theoretic slope: 0.00459340659 (int: 4593)
-			 * intercept = 0.016646394188076 (int: 16646)
-			 * nominal theoretic intercept: 0.00 (int: 0)
-			 *
-			 */
-			unsigned counts = adc_measure(ADC_VBATT);
-
-			if (counts != 0xffff) {
-				unsigned mV = (166460 + (counts * 45934)) / 10000;
-				unsigned corrected = (mV * r_page_setup[PX4IO_P_SETUP_VBATT_SCALE]) / 10000;
-
-				r_page_status[PX4IO_P_STATUS_VBATT] = corrected;
-			}
-		}
-
-#endif
-#ifdef ADC_IBATT
-		/* PX4IO_P_STATUS_IBATT */
-		{
-			/*
-			  note that we have no idea what sort of
-			  current sensor is attached, so we just
-			  return the raw 12 bit ADC value and let the
-			  FMU sort it out, with user selectable
-			  configuration for their sensor
-			 */
-			unsigned counts = adc_measure(ADC_IBATT);
-
-			if (counts != 0xffff) {
-				r_page_status[PX4IO_P_STATUS_IBATT] = counts;
-			}
-		}
-#endif
 #ifdef ADC_VSERVO
 		/* PX4IO_P_STATUS_VSERVO */
 		{
@@ -677,6 +633,7 @@ registers_get(uint8_t page, uint8_t offset, uint16_t **values, unsigned *num_val
 				r_page_status[PX4IO_P_STATUS_VSERVO] = mV;
 			}
 		}
+
 #endif
 #ifdef ADC_RSSI
 		/* PX4IO_P_STATUS_VRSSI */
@@ -697,12 +654,6 @@ registers_get(uint8_t page, uint8_t offset, uint16_t **values, unsigned *num_val
 
 	case PX4IO_PAGE_RAW_ADC_INPUT:
 		memset(r_page_scratch, 0, sizeof(r_page_scratch));
-#ifdef ADC_VBATT
-		r_page_scratch[0] = adc_measure(ADC_VBATT);
-#endif
-#ifdef ADC_IBATT
-		r_page_scratch[1] = adc_measure(ADC_IBATT);
-#endif
 
 #ifdef ADC_VSERVO
 		r_page_scratch[0] = adc_measure(ADC_VSERVO);
