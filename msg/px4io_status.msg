@@ -37,4 +37,8 @@ bool arming_lockdown
 bool arming_force_failsafe
 bool arming_termination_failsafe
 
-uint16[8] servos
+uint16[8] pwm
+uint16[8] pwm_disarmed
+uint16[8] pwm_failsafe
+
+uint16[8] pwm_rate_hz

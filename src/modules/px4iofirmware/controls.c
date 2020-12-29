@@ -43,12 +43,12 @@
 #include <stdbool.h>
 
 #include <drivers/drv_hrt.h>
-#include <drivers/drv_rc_input.h>
 #include <systemlib/ppm_decode.h>
 #include <rc/st24.h>
 #include <rc/sumd.h>
 #include <rc/sbus.h>
 #include <rc/dsm.h>
+#include <uORB/topics/input_rc.h>
 
 #if defined(PX4IO_PERF)
 # include <perf/perf_counter.h>
@@ -72,7 +72,7 @@ int _sbus_fd = -1;
 static unsigned _rssi_adc_counts = 0;
 #endif
 
-/* receive signal strenght indicator (RSSI). 0 = no connection, 100 (RC_INPUT_RSSI_MAX): perfect connection */
+/* receive signal strenght indicator (RSSI). 0 = no connection, 100 (input_rc_s::RSSI_MAX): perfect connection */
 /* Note: this is static because RC-provided telemetry does not occur every tick */
 static uint16_t _rssi = 0;
 
@@ -121,7 +121,7 @@ bool dsm_port_input(uint16_t *rssi, bool *dsm_updated, bool *st24_updated, bool 
 
 	for (unsigned i = 0; i < n_bytes; i++) {
 		/* set updated flag if one complete packet was parsed */
-		st24_rssi = RC_INPUT_RSSI_MAX;
+		st24_rssi = INPUT_RC_RSSI_MAX; // input_rc_s::RSSI_MAX;
 		*st24_updated |= (OK == st24_decode(bytes[i], &st24_rssi, &lost_count,
 						    &st24_channel_count, r_raw_rc_values, PX4IO_RC_INPUT_CHANNELS));
 	}
@@ -149,7 +149,7 @@ bool dsm_port_input(uint16_t *rssi, bool *dsm_updated, bool *st24_updated, bool 
 
 	for (unsigned i = 0; i < n_bytes; i++) {
 		/* set updated flag if one complete packet was parsed */
-		sumd_rssi = RC_INPUT_RSSI_MAX;
+		sumd_rssi = INPUT_RC_RSSI_MAX; // input_rc_s::RSSI_MAX;
 		*sumd_updated |= (OK == sumd_decode(bytes[i], &sumd_rssi, &sumd_rx_count,
 						    &sumd_channel_count, r_raw_rc_values, PX4IO_RC_INPUT_CHANNELS, &sumd_failsafe_state));
 	}
@@ -225,11 +225,11 @@ controls_tick()
 			_rssi_adc_counts = (_rssi_adc_counts * 0.998f) + (counts * 0.002f);
 			/* use 1:1 scaling on 3.3V, 12-Bit ADC input */
 			unsigned mV = _rssi_adc_counts * 3300 / 4095;
-			/* scale to 0..100 (RC_INPUT_RSSI_MAX == 100) */
-			_rssi = (mV * RC_INPUT_RSSI_MAX / 3300);
+			/* scale to 0..100 (input_rc_s::RSSI_MAX == 100) */
+			_rssi = (mV * INPUT_RC_RSSI_MAX / 3300);
 
-			if (_rssi > RC_INPUT_RSSI_MAX) {
-				_rssi = RC_INPUT_RSSI_MAX;
+			if (_rssi > INPUT_RC_RSSI_MAX) {
+				_rssi = INPUT_RC_RSSI_MAX;
 			}
 		}
 	}
@@ -252,11 +252,11 @@ controls_tick()
 	if (sbus_updated) {
 		atomic_modify_or(&r_status_flags, PX4IO_P_STATUS_FLAGS_RC_SBUS);
 
-		unsigned sbus_rssi = RC_INPUT_RSSI_MAX;
+		unsigned sbus_rssi = INPUT_RC_RSSI_MAX;
 
 		if (sbus_frame_drop) {
 			r_raw_rc_flags |= PX4IO_P_RAW_RC_FLAGS_FRAME_DROP;
-			sbus_rssi = RC_INPUT_RSSI_MAX / 2;
+			sbus_rssi = INPUT_RC_RSSI_MAX / 2;
 
 		} else {
 			r_raw_rc_flags &= ~(PX4IO_P_RAW_RC_FLAGS_FRAME_DROP);

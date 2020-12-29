@@ -50,7 +50,6 @@
 #include <drivers/drv_hrt.h>
 #include <drivers/drv_mixer.h>
 #include <drivers/drv_pwm_output.h>
-#include <drivers/drv_rc_input.h>
 #include <drivers/drv_sbus.h>
 #include <lib/circuit_breaker/circuit_breaker.h>
 #include <lib/mathlib/mathlib.h>
@@ -69,6 +68,7 @@
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/actuator_outputs.h>
 #include <uORB/topics/actuator_armed.h>
+#include <uORB/topics/input_rc.h>
 #include <uORB/topics/safety.h>
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/px4io_status.h>
@@ -164,7 +164,7 @@ public:
 	 *
 	 * @param extended_status Shows more verbose information (in particular RC config)
 	 */
-	void			print_status(bool extended_status);
+	void			print_status();
 
 	/**
 	 * Fetch and print debug console output.
@@ -1319,7 +1319,24 @@ int PX4IO::io_get_status()
 		status.arming_termination_failsafe = SETUP_ARMING & PX4IO_P_SETUP_ARMING_TERMINATION_FAILSAFE;
 
 		for (unsigned i = 0; i < _max_actuators; i++) {
-			status.servos[i] = io_reg_get(PX4IO_PAGE_SERVOS, i);
+			status.pwm[i] = io_reg_get(PX4IO_PAGE_SERVOS, i);
+			status.pwm_disarmed[i] = io_reg_get(PX4IO_PAGE_DISARMED_PWM, i);
+			status.pwm_failsafe[i] = io_reg_get(PX4IO_PAGE_FAILSAFE_PWM, i);
+		}
+
+		// PWM rates, 0 = low rate, 1 = high rate
+		const uint16_t pwm_rate = io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_RATES);
+
+		const int pwm_low_rate = io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_DEFAULTRATE);
+		const int pwm_high_rate = io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_ALTRATE);
+
+		for (unsigned i = 0; i < _max_actuators; i++) {
+			if (pwm_rate & (2 << i)) {
+				status.pwm_rate_hz[i] = pwm_high_rate;
+
+			} else {
+				status.pwm_rate_hz[i] = pwm_low_rate;
+			}
 		}
 
 		status.timestamp = hrt_absolute_time();
@@ -1575,7 +1592,7 @@ PX4IO::print_debug()
 
 }
 
-void PX4IO::print_status(bool extended_status)
+void PX4IO::print_status()
 {
 	/* basic configuration */
 	printf("protocol %u hardware %u bootloader %u buffer %uB crc 0x%04x%04x\n",
@@ -1611,27 +1628,6 @@ void PX4IO::print_status(bool extended_status)
 	}
 
 	printf("\n");
-
-	uint16_t io_status_flags = io_reg_get(PX4IO_PAGE_STATUS, PX4IO_P_STATUS_FLAGS);
-	uint16_t flags = io_reg_get(PX4IO_PAGE_RAW_RC_INPUT, PX4IO_P_RAW_RC_FLAGS);
-	printf("R/C flags: 0x%04hx%s%s%s%s%s\n", flags,
-	       (((io_status_flags & PX4IO_P_STATUS_FLAGS_RC_DSM) && (!(flags & PX4IO_P_RAW_RC_FLAGS_RC_DSM11))) ? " DSM10" : ""),
-	       (((io_status_flags & PX4IO_P_STATUS_FLAGS_RC_DSM) && (flags & PX4IO_P_RAW_RC_FLAGS_RC_DSM11)) ? " DSM11" : ""),
-	       ((flags & PX4IO_P_RAW_RC_FLAGS_FRAME_DROP) ? " FRAME_DROP" : ""),
-	       ((flags & PX4IO_P_RAW_RC_FLAGS_FAILSAFE) ? " FAILSAFE" : ""),
-	       ((flags & PX4IO_P_RAW_RC_FLAGS_MAPPING_OK) ? " MAPPING_OK" : "")
-	      );
-
-	if ((io_status_flags & PX4IO_P_STATUS_FLAGS_RC_PPM)) {
-		int frame_len = io_reg_get(PX4IO_PAGE_RAW_RC_INPUT, PX4IO_P_RAW_RC_DATA);
-		printf("RC data (PPM frame len) %d us\n", frame_len);
-
-		if ((frame_len - raw_inputs * 2000 - 3000) < 0) {
-			printf("WARNING  WARNING  WARNING! This RC receiver does not allow safe frame detection.\n");
-		}
-	}
-
-	printf("\n");
 	uint16_t adc_inputs = io_reg_get(PX4IO_PAGE_CONFIG, PX4IO_P_CONFIG_ADC_INPUT_COUNT);
 	printf("ADC inputs");
 
@@ -1643,43 +1639,26 @@ void PX4IO::print_status(bool extended_status)
 
 	/* setup and state */
 	uint16_t features = io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES);
-	printf("features 0x%04hx%s%s%s%s\n", features,
+	printf("features 0x%04hx%s%s%s\n", features,
 	       ((features & PX4IO_P_SETUP_FEATURES_SBUS1_OUT) ? " S.BUS1_OUT" : ""),
 	       ((features & PX4IO_P_SETUP_FEATURES_SBUS2_OUT) ? " S.BUS2_OUT" : ""),
-	       ((features & PX4IO_P_SETUP_FEATURES_PWM_RSSI) ? " RSSI_PWM" : ""),
 	       ((features & PX4IO_P_SETUP_FEATURES_ADC_RSSI) ? " RSSI_ADC" : "")
 	      );
 
-	printf("rates 0x%04x default %u alt %u sbus %u\n",
-	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_RATES),
-	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_DEFAULTRATE),
-	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_PWM_ALTRATE),
-	       io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_SBUS_RATE));
+	printf("sbus rate %u\n", io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_SBUS_RATE));
+
 	printf("debuglevel %u\n", io_reg_get(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_SET_DEBUG));
 
-	if (extended_status) {
-		for (unsigned i = 0; i < _max_rc_input; i++) {
-			unsigned base = PX4IO_P_RC_CONFIG_STRIDE * i;
-			uint16_t options = io_reg_get(PX4IO_PAGE_RC_CONFIG, base + PX4IO_P_RC_CONFIG_OPTIONS);
-			printf("input %u assigned %u options 0x%04hx%s%s\n",
-			       i,
-			       io_reg_get(PX4IO_PAGE_RC_CONFIG, base + PX4IO_P_RC_CONFIG_ASSIGNMENT),
-			       options,
-			       ((options & PX4IO_P_RC_CONFIG_OPTIONS_ENABLED) ? " ENABLED" : ""),
-			       ((options & PX4IO_P_RC_CONFIG_OPTIONS_REVERSE) ? " REVERSED" : ""));
-		}
-	}
-
-	printf("failsafe");
-
-	for (unsigned i = 0; i < _max_actuators; i++) {
-		printf(" %u", io_reg_get(PX4IO_PAGE_FAILSAFE_PWM, i));
-	}
-
-	printf("\ndisarmed values");
-
-	for (unsigned i = 0; i < _max_actuators; i++) {
-		printf(" %u", io_reg_get(PX4IO_PAGE_DISARMED_PWM, i));
+	// extended status
+	for (unsigned i = 0; i < _max_rc_input; i++) {
+		unsigned base = PX4IO_P_RC_CONFIG_STRIDE * i;
+		uint16_t options = io_reg_get(PX4IO_PAGE_RC_CONFIG, base + PX4IO_P_RC_CONFIG_OPTIONS);
+		printf("input %u assigned %u options 0x%04hx%s%s\n",
+		       i,
+		       io_reg_get(PX4IO_PAGE_RC_CONFIG, base + PX4IO_P_RC_CONFIG_ASSIGNMENT),
+		       options,
+		       ((options & PX4IO_P_RC_CONFIG_OPTIONS_ENABLED) ? " ENABLED" : ""),
+		       ((options & PX4IO_P_RC_CONFIG_OPTIONS_REVERSE) ? " REVERSED" : ""));
 	}
 
 	/* IMU heater (Pixhawk 2.1) */
@@ -2178,30 +2157,6 @@ int PX4IO::ioctl(file *filep, int cmd, unsigned long arg)
 
 		break;
 
-	case RC_INPUT_ENABLE_RSSI_ANALOG:
-		PX4_DEBUG("RC_INPUT_ENABLE_RSSI_ANALOG");
-
-		if (arg) {
-			ret = io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES, 0, PX4IO_P_SETUP_FEATURES_ADC_RSSI);
-
-		} else {
-			ret = io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES, PX4IO_P_SETUP_FEATURES_ADC_RSSI, 0);
-		}
-
-		break;
-
-	case RC_INPUT_ENABLE_RSSI_PWM:
-		PX4_DEBUG("RC_INPUT_ENABLE_RSSI_PWM");
-
-		if (arg) {
-			ret = io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES, 0, PX4IO_P_SETUP_FEATURES_PWM_RSSI);
-
-		} else {
-			ret = io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES, PX4IO_P_SETUP_FEATURES_PWM_RSSI, 0);
-		}
-
-		break;
-
 	case SBUS_SET_PROTO_VERSION:
 		PX4_DEBUG("SBUS_SET_PROTO_VERSION");
 
@@ -2466,7 +2421,7 @@ void monitor()
 		if (g_dev != nullptr) {
 
 			printf("\033[2J\033[H"); /* move cursor home and clear screen */
-			(void)g_dev->print_status(false);
+			(void)g_dev->print_status();
 			(void)g_dev->print_debug();
 			printf("\n\n\n[ Use 'px4io debug <N>' for more output. Hit <enter> three times to exit monitor mode ]\n");
 
@@ -2706,7 +2661,7 @@ int px4io_main(int argc, char *argv[])
 	if (!strcmp(argv[1], "status")) {
 
 		warnx("loaded");
-		g_dev->print_status(true);
+		g_dev->print_status();
 
 		exit(0);
 	}
@@ -2783,32 +2738,6 @@ int px4io_main(int argc, char *argv[])
 		exit(0);
 	}
 
-	if (!strcmp(argv[1], "rssi_analog")) {
-		/* we can cheat and call the driver directly, as it
-		 * doesn't reference filp in ioctl()
-		 */
-		int ret = g_dev->ioctl(nullptr, RC_INPUT_ENABLE_RSSI_ANALOG, 1);
-
-		if (ret != 0) {
-			errx(ret, "RSSI analog failed");
-		}
-
-		exit(0);
-	}
-
-	if (!strcmp(argv[1], "rssi_pwm")) {
-		/* we can cheat and call the driver directly, as it
-		 * doesn't reference filp in ioctl()
-		 */
-		int ret = g_dev->ioctl(nullptr, RC_INPUT_ENABLE_RSSI_PWM, 1);
-
-		if (ret != 0) {
-			errx(ret, "RSSI PWM failed");
-		}
-
-		exit(0);
-	}
-
 	if (!strcmp(argv[1], "test_fmu_fail")) {
 		if (g_dev != nullptr) {
 			g_dev->test_fmu_fail(true);
@@ -2834,6 +2763,6 @@ int px4io_main(int argc, char *argv[])
 out:
 	errx(1, "need a command, try 'start', 'stop', 'status', 'monitor', 'debug <level>',\n"
 	     "'recovery', 'bind', 'checkcrc', 'safety_on', 'safety_off',\n"
-	     "'forceupdate', 'update', 'sbus1_out', 'sbus2_out', 'rssi_analog' or 'rssi_pwm',\n"
+	     "'forceupdate', 'update', 'sbus1_out', 'sbus2_out',\n"
 	     "'test_fmu_fail', 'test_fmu_ok'");
 }

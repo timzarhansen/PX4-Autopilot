@@ -152,10 +152,7 @@ volatile uint16_t	r_page_setup[] = {
 	[PX4IO_P_SETUP_ENABLE_FLIGHTTERMINATION] = 0
 };
 
-#define PX4IO_P_SETUP_FEATURES_VALID	(PX4IO_P_SETUP_FEATURES_SBUS1_OUT | \
-		PX4IO_P_SETUP_FEATURES_SBUS2_OUT | \
-		PX4IO_P_SETUP_FEATURES_ADC_RSSI | \
-		PX4IO_P_SETUP_FEATURES_PWM_RSSI)
+#define PX4IO_P_SETUP_FEATURES_VALID	(PX4IO_P_SETUP_FEATURES_SBUS1_OUT | PX4IO_P_SETUP_FEATURES_SBUS2_OUT | PX4IO_P_SETUP_FEATURES_ADC_RSSI)
 
 #define PX4IO_P_SETUP_ARMING_VALID	(PX4IO_P_SETUP_ARMING_FMU_ARMED | \
 		PX4IO_P_SETUP_ARMING_FMU_PREARMED | \
@@ -350,32 +347,19 @@ registers_set_one(uint8_t page, uint8_t offset, uint16_t value)
 
 			/* disable the conflicting options with SBUS 1 */
 			if (value & (PX4IO_P_SETUP_FEATURES_SBUS1_OUT)) {
-				value &= ~(PX4IO_P_SETUP_FEATURES_PWM_RSSI |
-					   PX4IO_P_SETUP_FEATURES_ADC_RSSI |
-					   PX4IO_P_SETUP_FEATURES_SBUS2_OUT);
+				value &= ~(PX4IO_P_SETUP_FEATURES_ADC_RSSI | PX4IO_P_SETUP_FEATURES_SBUS2_OUT);
 			}
 
 			/* disable the conflicting options with SBUS 2 */
 			if (value & (PX4IO_P_SETUP_FEATURES_SBUS2_OUT)) {
-				value &= ~(PX4IO_P_SETUP_FEATURES_PWM_RSSI |
-					   PX4IO_P_SETUP_FEATURES_ADC_RSSI |
-					   PX4IO_P_SETUP_FEATURES_SBUS1_OUT);
+				value &= ~(PX4IO_P_SETUP_FEATURES_ADC_RSSI | PX4IO_P_SETUP_FEATURES_SBUS1_OUT);
 			}
 
 #endif
 
 			/* disable the conflicting options with ADC RSSI */
 			if (value & (PX4IO_P_SETUP_FEATURES_ADC_RSSI)) {
-				value &= ~(PX4IO_P_SETUP_FEATURES_PWM_RSSI |
-					   PX4IO_P_SETUP_FEATURES_SBUS1_OUT |
-					   PX4IO_P_SETUP_FEATURES_SBUS2_OUT);
-			}
-
-			/* disable the conflicting options with PWM RSSI (without effect here, but for completeness) */
-			if (value & (PX4IO_P_SETUP_FEATURES_PWM_RSSI)) {
-				value &= ~(PX4IO_P_SETUP_FEATURES_ADC_RSSI |
-					   PX4IO_P_SETUP_FEATURES_SBUS1_OUT |
-					   PX4IO_P_SETUP_FEATURES_SBUS2_OUT);
+				value &= ~(PX4IO_P_SETUP_FEATURES_SBUS1_OUT | PX4IO_P_SETUP_FEATURES_SBUS2_OUT);
 			}
 
 			/* apply changes */

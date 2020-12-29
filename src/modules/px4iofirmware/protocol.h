@@ -61,7 +61,7 @@
  * the PX4 system are expressed as signed integer values scaled by 10000,
  * e.g. control values range from -10000..10000.  Use the REG_TO_SIGNED and
  * SIGNED_TO_REG macros to convert between register representation and
- * the signed version, and REG_TO_FLOAT/FLOAT_TO_REG to convert to float.
+ * the signed version.
  *
  * Note that the implementation of readable pages prefers registers within
  * readable pages to be densely packed. Page numbers do not need to be
@@ -75,12 +75,9 @@
 #define REG_TO_SIGNED(_reg)	((int16_t)(_reg))
 #define SIGNED_TO_REG(_signed)	((uint16_t)(_signed))
 
-#define REG_TO_FLOAT(_reg)	((float)REG_TO_SIGNED(_reg) / 10000.0f)
-#define FLOAT_TO_REG(_float)	SIGNED_TO_REG((int16_t)floorf((_float + 0.00005f) * 10000.0f))
-
 #define REG_TO_BOOL(_reg) 	((bool)(_reg))
 
-#define PX4IO_PROTOCOL_VERSION		4
+#define PX4IO_PROTOCOL_VERSION		5
 
 /* maximum allowable sizes on this protocol version */
 #define PX4IO_PROTOCOL_MAX_CONTROL_COUNT	8	/**< The protocol does not support more than set here, individual units might support less - see PX4IO_P_CONFIG_CONTROL_COUNT */
@@ -95,7 +92,7 @@
 #define PX4IO_P_CONFIG_ACTUATOR_COUNT		5	/* hardcoded max actuator output count */
 #define PX4IO_P_CONFIG_RC_INPUT_COUNT		6	/* hardcoded max R/C input count supported */
 #define PX4IO_P_CONFIG_ADC_INPUT_COUNT		7	/* hardcoded max ADC inputs */
-#define PX4IO_MAX_TRANSFER_LEN				64
+#define PX4IO_MAX_TRANSFER_LEN			64
 
 /* dynamic status page */
 #define PX4IO_PAGE_STATUS			1
@@ -104,26 +101,24 @@
 
 #define PX4IO_P_STATUS_FLAGS			2	 /* monitoring flags */
 #define PX4IO_P_STATUS_FLAGS_OUTPUTS_ARMED	(1 << 0) /* arm-ok and locally armed */
-
-#define PX4IO_P_STATUS_FLAGS_RC_OK		(1 << 2) /* RC input is valid */
-#define PX4IO_P_STATUS_FLAGS_RC_PPM		(1 << 3) /* PPM input is valid */
-#define PX4IO_P_STATUS_FLAGS_RC_DSM		(1 << 4) /* DSM input is valid */
-#define PX4IO_P_STATUS_FLAGS_RC_SBUS		(1 << 5) /* SBUS input is valid */
-#define PX4IO_P_STATUS_FLAGS_FMU_OK		(1 << 6) /* controls from FMU are valid */
-#define PX4IO_P_STATUS_FLAGS_RAW_PWM		(1 << 7) /* raw PWM from FMU is bypassing the mixer */
-
-#define PX4IO_P_STATUS_FLAGS_ARM_SYNC		(1 << 9) /* the arming state between IO and FMU is in sync */
-#define PX4IO_P_STATUS_FLAGS_INIT_OK		(1 << 10) /* initialisation of the IO completed without error */
-#define PX4IO_P_STATUS_FLAGS_FAILSAFE		(1 << 11) /* failsafe is active */
-#define PX4IO_P_STATUS_FLAGS_SAFETY_OFF		(1 << 12) /* safety is off */
-#define PX4IO_P_STATUS_FLAGS_FMU_INITIALIZED	(1 << 13) /* FMU was initialized and OK once */
-#define PX4IO_P_STATUS_FLAGS_RC_ST24		(1 << 14) /* ST24 input is valid */
-#define PX4IO_P_STATUS_FLAGS_RC_SUMD		(1 << 15) /* SUMD input is valid */
+#define PX4IO_P_STATUS_FLAGS_RC_OK		(1 << 1) /* RC input is valid */
+#define PX4IO_P_STATUS_FLAGS_RC_PPM		(1 << 2) /* PPM input is valid */
+#define PX4IO_P_STATUS_FLAGS_RC_DSM		(1 << 3) /* DSM input is valid */
+#define PX4IO_P_STATUS_FLAGS_RC_SBUS		(1 << 4) /* SBUS input is valid */
+#define PX4IO_P_STATUS_FLAGS_FMU_OK		(1 << 5) /* controls from FMU are valid */
+#define PX4IO_P_STATUS_FLAGS_RAW_PWM		(1 << 6) /* raw PWM from FMU is bypassing the mixer */
+#define PX4IO_P_STATUS_FLAGS_ARM_SYNC		(1 << 7) /* the arming state between IO and FMU is in sync */
+#define PX4IO_P_STATUS_FLAGS_INIT_OK		(1 << 8) /* initialisation of the IO completed without error */
+#define PX4IO_P_STATUS_FLAGS_FAILSAFE		(1 << 9) /* failsafe is active */
+#define PX4IO_P_STATUS_FLAGS_SAFETY_OFF		(1 << 10) /* safety is off */
+#define PX4IO_P_STATUS_FLAGS_FMU_INITIALIZED	(1 << 11) /* FMU was initialized and OK once */
+#define PX4IO_P_STATUS_FLAGS_RC_ST24		(1 << 12) /* ST24 input is valid */
+#define PX4IO_P_STATUS_FLAGS_RC_SUMD		(1 << 13) /* SUMD input is valid */
 
 #define PX4IO_P_STATUS_ALARMS			3	 /* alarm flags - alarms latch, write 1 to a bit to clear it */
-#define PX4IO_P_STATUS_ALARMS_FMU_LOST		(1 << 1) /* timed out waiting for controls from FMU */
-#define PX4IO_P_STATUS_ALARMS_RC_LOST		(1 << 2) /* timed out waiting for RC input */
-#define PX4IO_P_STATUS_ALARMS_PWM_ERROR		(1 << 3) /* PWM configuration or output was bad */
+#define PX4IO_P_STATUS_ALARMS_FMU_LOST		(1 << 0) /* timed out waiting for controls from FMU */
+#define PX4IO_P_STATUS_ALARMS_RC_LOST		(1 << 1) /* timed out waiting for RC input */
+#define PX4IO_P_STATUS_ALARMS_PWM_ERROR		(1 << 2) /* PWM configuration or output was bad */
 
 #define PX4IO_P_STATUS_VSERVO			6	/* [2] servo rail voltage in mV */
 #define PX4IO_P_STATUS_VRSSI			7	/* [2] RSSI voltage */
@@ -159,12 +154,11 @@
 #define PX4IO_P_SETUP_FEATURES			0
 #define PX4IO_P_SETUP_FEATURES_SBUS1_OUT	(1 << 0) /**< enable S.Bus v1 output */
 #define PX4IO_P_SETUP_FEATURES_SBUS2_OUT	(1 << 1) /**< enable S.Bus v2 output */
-#define PX4IO_P_SETUP_FEATURES_PWM_RSSI		(1 << 2) /**< enable PWM RSSI parsing */
-#define PX4IO_P_SETUP_FEATURES_ADC_RSSI		(1 << 3) /**< enable ADC RSSI parsing */
+#define PX4IO_P_SETUP_FEATURES_ADC_RSSI		(1 << 2) /**< enable ADC RSSI parsing */
 
 #define PX4IO_P_SETUP_ARMING			1	 /* arming controls */
-#define PX4IO_P_SETUP_ARMING_IO_ARM_OK		  (1 << 0) /* OK to arm the IO side */
-#define PX4IO_P_SETUP_ARMING_FMU_ARMED		  (1 << 1) /* FMU is already armed */
+#define PX4IO_P_SETUP_ARMING_IO_ARM_OK		(1 << 0) /* OK to arm the IO side */
+#define PX4IO_P_SETUP_ARMING_FMU_ARMED		(1 << 1) /* FMU is already armed */
 #define PX4IO_P_SETUP_ARMING_FMU_PREARMED	  (1 << 2) /* FMU is already prearmed */
 #define PX4IO_P_SETUP_ARMING_FAILSAFE_CUSTOM      (1 << 3) /* use custom failsafe values, not 0 values of mixer */
 #define PX4IO_P_SETUP_ARMING_INAIR_RESTART_OK     (1 << 4) /* OK to try in-air restart */
