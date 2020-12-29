@@ -9,11 +9,6 @@ then
 
 fi
 
-if ver hwtypecmp V540 V560
-then
-	param set SYS_USE_IO 0
-fi
-
 set LOGGER_BUF 64
 
 rgbled_pwm start

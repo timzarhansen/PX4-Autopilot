@@ -278,39 +278,46 @@ else
 
 	if [ -f $IOFW ]
 	then
-		if px4io checkcrc ${IOFW}
+		# Check for the mini using build with px4io fw file
+		# but not a px4IO
+		if ver hwtypecmp V540 V560
 		then
-			set IO_PRESENT yes
+			param set SYS_USE_IO 0
 		else
-			# tune Program PX4IO
-			tune_control play -t 16 # tune 16 = PROG_PX4IO
-
-			if px4io start
+			if px4io checkcrc ${IOFW}
 			then
-				# Try to safety px4 io so motor outputs don't go crazy.
-				if ! px4io safety_on
+				set IO_PRESENT yes
+			else
+				# tune Program PX4IO
+				tune_control play -t 16 # tune 16 = PROG_PX4IO
+
+				if px4io start
 				then
-					# px4io did not respond to the safety command.
-					px4io stop
+					# Try to safety px4 io so motor outputs don't go crazy.
+					if ! px4io safety_on
+					then
+						# px4io did not respond to the safety command.
+						px4io stop
+					fi
 				fi
-			fi
 
-			if px4io forceupdate 14662 ${IOFW}
-			then
-				usleep 10000
-				tune_control stop
-				if px4io checkcrc ${IOFW}
+				if px4io forceupdate 14662 ${IOFW}
 				then
-					echo "PX4IO CRC OK after updating"
-					tune_control play -t 17 # tune 17 = PROG_PX4IO_OK
-					set IO_PRESENT yes
+					usleep 10000
+					tune_control stop
+					if px4io checkcrc ${IOFW}
+					then
+						echo "PX4IO CRC OK after updating"
+						tune_control play -t 17 # tune 17 = PROG_PX4IO_OK
+						set IO_PRESENT yes
+					fi
 				fi
-			fi
 
-			if [ $IO_PRESENT = no ]
-			then
-				echo "PX4IO update failed"
-				tune_control play -t 18 # tune 18 = PROG_PX4IO_ERR
+				if [ $IO_PRESENT = no ]
+				then
+					echo "PX4IO update failed"
+					tune_control play -t 18 # tune 18 = PROG_PX4IO_ERR
+				fi
 			fi
 		fi
 	fi
