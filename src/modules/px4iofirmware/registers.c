@@ -732,6 +732,10 @@ registers_get(uint8_t page, uint8_t offset, uint16_t **values, unsigned *num_val
 		SELECT_PAGE(r_page_config);
 		break;
 
+	case PX4IO_PAGE_SERVOS:
+		SELECT_PAGE(r_page_servos);
+		break;
+
 	case PX4IO_PAGE_RAW_RC_INPUT:
 		SELECT_PAGE(r_page_raw_rc_input);
 		break;

@@ -185,6 +185,9 @@ public:
 private:
 	void Run() override;
 
+	void updateDisarmed();
+	void updateFailsafe();
+
 	device::Device		*_interface;
 
 	unsigned		_hardware{0};		///< Hardware revision
@@ -246,6 +249,10 @@ private:
 	bool                    _hitl_mode{false};     ///< Hardware-in-the-loop simulation mode - don't publish actuator_outputs
 
 	MixingOutput _mixing_output{8, *this, MixingOutput::SchedulingPolicy::Auto, true};
+	uint16_t _prev_outputs[MAX_ACTUATORS] {};
+	hrt_abstime _last_full_output_update{0};
+
+
 
 	/**
 	 * Update IO's arming-related state
@@ -441,10 +448,19 @@ bool PX4IO::updateOutputs(bool stop_motors, uint16_t outputs[MAX_ACTUATORS],
 {
 	SmartLock lock_guard(_lock);
 
+	const bool full_update = (hrt_elapsed_time(&_last_full_output_update) >= 500_ms);
+
 	/* output to the servos */
 	for (size_t i = 0; i < num_outputs; i++) {
 		// TODO: only update if changed
-		io_reg_set(PX4IO_PAGE_DIRECT_PWM, i, outputs[i]);
+		if (_prev_outputs[i] != outputs[i] || full_update) {
+			io_reg_set(PX4IO_PAGE_DIRECT_PWM, i, outputs[i]);
+			_prev_outputs[i] = outputs[i];
+		}
+	}
+
+	if (full_update) {
+		_last_full_output_update = hrt_absolute_time();
 	}
 
 	return true;
@@ -452,8 +468,6 @@ bool PX4IO::updateOutputs(bool stop_motors, uint16_t outputs[MAX_ACTUATORS],
 
 int PX4IO::init()
 {
-	PX4_INFO("init");
-
 	param_t sys_restart_param = param_find("SYS_RESTART_TYPE");
 	int32_t sys_restart_val = DM_INIT_REASON_VOLATILE;
 
@@ -755,9 +769,34 @@ int PX4IO::init()
 
 	_mixing_output.setMaxTopicUpdateRate(2500);
 
+	updateDisarmed();
+	updateFailsafe();
+
 	ScheduleNow();
 
 	return OK;
+}
+
+void PX4IO::updateDisarmed()
+{
+	pwm_output_values pwm{};
+
+	for (unsigned i = 0; i < _max_actuators; i++) {
+		pwm.values[i] = _mixing_output.disarmedValue(i);
+	}
+
+	io_reg_set(PX4IO_PAGE_DISARMED_PWM, 0, pwm.values, _max_actuators);
+}
+
+void PX4IO::updateFailsafe()
+{
+	pwm_output_values pwm{};
+
+	for (unsigned i = 0; i < _max_actuators; i++) {
+		pwm.values[i] = _mixing_output.failsafeValue(i);
+	}
+
+	io_reg_set(PX4IO_PAGE_FAILSAFE_PWM, 0, pwm.values, _max_actuators);
 }
 
 void PX4IO::Run()
@@ -796,6 +835,10 @@ void PX4IO::Run()
 		/* check updates on uORB topics and handle it */
 		if (_t_actuator_armed.updated()) {
 			io_set_arming_state();
+
+			// TODO: throttle
+			updateDisarmed();
+			updateFailsafe();
 		}
 
 		if (!_mixing_output.armed().armed) {
@@ -1765,7 +1808,7 @@ int PX4IO::ioctl(file *filep, int cmd, unsigned long arg)
 
 			for (unsigned i = 0; i < pwm->channel_count; i++) {
 				if (pwm->values[i] != 0) {
-					_mixing_output.maxValue(i) = math::constrain(pwm->values[i], (uint16_t)PWM_LOWEST_MIN, (uint16_t)PWM_HIGHEST_MIN);
+					_mixing_output.maxValue(i) = math::constrain(pwm->values[i], (uint16_t)PWM_LOWEST_MAX, (uint16_t)PWM_HIGHEST_MAX);
 				}
 			}
 		}
