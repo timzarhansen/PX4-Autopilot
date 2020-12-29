@@ -186,8 +186,13 @@ public:
 private:
 	void Run() override;
 
+	void update_pwm_rev_mask();
+	void update_pwm_trims();
+
 	void updateDisarmed();
 	void updateFailsafe();
+
+	static constexpr int PX4IO_MAX_ACTUATORS = 8;
 
 	device::Device		*_interface;
 
@@ -199,6 +204,8 @@ private:
 
 	bool			_rc_handling_disabled{false};	///< If set, IO does not evaluate, but only forward the RC values
 	uint64_t		_rc_last_valid{0};		///< last valid timestamp
+
+	int			_class_instance{-1};
 
 	volatile int		_task{-1};			///< worker task id
 	volatile bool		_task_should_exit{false};	///< worker terminate flag
@@ -249,11 +256,9 @@ private:
 
 	bool                    _hitl_mode{false};     ///< Hardware-in-the-loop simulation mode - don't publish actuator_outputs
 
-	MixingOutput _mixing_output{8, *this, MixingOutput::SchedulingPolicy::Auto, true};
+	MixingOutput _mixing_output{PX4IO_MAX_ACTUATORS, *this, MixingOutput::SchedulingPolicy::Auto, true};
 	uint16_t _prev_outputs[MAX_ACTUATORS] {};
 	hrt_abstime _last_full_output_update{0};
-
-
 
 	/**
 	 * Update IO's arming-related state
@@ -405,6 +410,9 @@ PX4IO::~PX4IO()
 	}
 
 	delete _interface;
+
+	/* clean up the alternate device node */
+	unregister_class_devname(PWM_OUTPUT_BASE_DEVICE_PATH, _class_instance);
 
 	/* deallocate perfs */
 	perf_free(_cycle_perf);
@@ -758,13 +766,16 @@ int PX4IO::init()
 	// XXX best would be to register / de-register the device depending on modes
 
 	/* try to claim the generic PWM output device node as well - it's OK if we fail at this */
-	auto class_instance = register_class_devname(PWM_OUTPUT_BASE_DEVICE_PATH);
-	_mixing_output.setDriverInstance(class_instance);
+	_class_instance = register_class_devname(PWM_OUTPUT_BASE_DEVICE_PATH);
+	_mixing_output.setDriverInstance(_class_instance);
 
 	_mixing_output.setMaxTopicUpdateRate(2500);
 
 	updateDisarmed();
 	updateFailsafe();
+
+	update_pwm_rev_mask();
+	update_pwm_trims();
 
 	ScheduleNow();
 
@@ -861,6 +872,9 @@ void PX4IO::Run()
 
 				ModuleParams::updateParams();
 
+				update_pwm_rev_mask();
+				update_pwm_trims();
+
 				if (!_rc_handling_disabled) {
 					/* re-upload RC input config as it may have changed */
 					io_set_rc_config();
@@ -933,6 +947,82 @@ void PX4IO::Run()
 	}
 
 	perf_end(_cycle_perf);
+}
+
+void PX4IO::update_pwm_rev_mask()
+{
+	uint16_t &reverse_pwm_mask = _mixing_output.reverseOutputMask();
+	reverse_pwm_mask = 0;
+
+	const char *pname_format;
+
+	if (_class_instance == CLASS_DEVICE_PRIMARY) {
+		pname_format = "PWM_MAIN_REV%d";
+
+	} else if (_class_instance == CLASS_DEVICE_SECONDARY) {
+		pname_format = "PWM_AUX_REV%d";
+
+	} else {
+		PX4_ERR("PWM REV only for MAIN and AUX");
+		return;
+	}
+
+	for (unsigned i = 0; i < PX4IO_MAX_ACTUATORS; i++) {
+		char pname[16];
+
+		/* fill the channel reverse mask from parameters */
+		sprintf(pname, pname_format, i + 1);
+		param_t param_h = param_find(pname);
+
+		if (param_h != PARAM_INVALID) {
+			int32_t ival = 0;
+			param_get(param_h, &ival);
+			reverse_pwm_mask |= ((int16_t)(ival != 0)) << i;
+		}
+	}
+}
+
+void PX4IO::update_pwm_trims()
+{
+	PX4_DEBUG("update_pwm_trims");
+
+	if (!_mixing_output.mixers()) {
+		return;
+	}
+
+	int16_t values[PX4IO_MAX_ACTUATORS] {};
+
+	const char *pname_format;
+
+	if (_class_instance == CLASS_DEVICE_PRIMARY) {
+		pname_format = "PWM_MAIN_TRIM%d";
+
+	} else if (_class_instance == CLASS_DEVICE_SECONDARY) {
+		pname_format = "PWM_AUX_TRIM%d";
+
+	} else {
+		PX4_ERR("PWM TRIM only for MAIN and AUX");
+		return;
+	}
+
+	for (unsigned i = 0; i < PX4IO_MAX_ACTUATORS; i++) {
+		char pname[16];
+
+		/* fill the struct from parameters */
+		sprintf(pname, pname_format, i + 1);
+		param_t param_h = param_find(pname);
+
+		if (param_h != PARAM_INVALID) {
+			float pval = 0.0f;
+			param_get(param_h, &pval);
+			values[i] = (int16_t)(10000 * pval);
+			PX4_DEBUG("%s: %d", pname, values[i]);
+		}
+	}
+
+	/* copy the trim values to the mixer offsets */
+	unsigned n_out = _mixing_output.mixers()->set_trims(values, PX4IO_MAX_ACTUATORS);
+	PX4_DEBUG("set %d trims", n_out);
 }
 
 int
