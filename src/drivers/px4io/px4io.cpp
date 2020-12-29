@@ -1322,12 +1322,6 @@ int PX4IO::io_get_status()
 			status.servos[i] = io_reg_get(PX4IO_PAGE_SERVOS, i);
 		}
 
-		uint16_t raw_inputs = io_reg_get(PX4IO_PAGE_RAW_RC_INPUT, PX4IO_P_RAW_RC_COUNT);
-
-		for (unsigned i = 0; i < raw_inputs; i++) {
-			status.raw_inputs[i] = io_reg_get(PX4IO_PAGE_RAW_RC_INPUT, PX4IO_P_RAW_RC_BASE + i);
-		}
-
 		status.timestamp = hrt_absolute_time();
 		_px4io_status_pub.publish(status);
 
