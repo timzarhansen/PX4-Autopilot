@@ -246,9 +246,6 @@ private:
 
 	bool			_cb_flighttermination{true};	///< true if the flight termination circuit breaker is enabled
 
-	int32_t		_rssi_pwm_chan{0}; ///< RSSI PWM input channel
-	int32_t		_rssi_pwm_max{0}; ///< max RSSI input on PWM channel
-	int32_t		_rssi_pwm_min{0}; ///< min RSSI input on PWM channel
 	int32_t		_thermal_control{-1}; ///< thermal control state
 	bool			_analog_rc_rssi_stable{false}; ///< true when analog RSSI input is stable
 	float			_analog_rc_rssi_volt{-1.f}; ///< analog RSSI voltage
@@ -570,10 +567,6 @@ int PX4IO::init()
 		_max_rc_input = input_rc_s::RC_INPUT_MAX_CHANNELS;
 	}
 
-	param_get(param_find("RC_RSSI_PWM_CHAN"), &_rssi_pwm_chan);
-	param_get(param_find("RC_RSSI_PWM_MAX"), &_rssi_pwm_max);
-	param_get(param_find("RC_RSSI_PWM_MIN"), &_rssi_pwm_min);
-
 	/*
 	 * Check for IO flight state - if FMU was flagged to be in
 	 * armed state, FMU is recovering from an in-air reset.
@@ -632,37 +625,22 @@ int PX4IO::init()
 		} while (true);
 
 		/* send this to itself */
-		param_t sys_id_param = param_find("MAV_SYS_ID");
-		param_t comp_id_param = param_find("MAV_COMP_ID");
-
-		int32_t sys_id = 0;
-		int32_t comp_id = 0;
-
-		if (param_get(sys_id_param, &sys_id)) {
-			errx(1, "PRM SYSID");
-		}
-
-		if (param_get(comp_id_param, &comp_id)) {
-			errx(1, "PRM CMPID");
-		}
-
-		/* prepare vehicle command */
 		vehicle_command_s vcmd{};
-		vcmd.target_system = (uint8_t)sys_id;
-		vcmd.target_component = (uint8_t)comp_id;
-		vcmd.source_system = (uint8_t)sys_id;
-		vcmd.source_component = (uint8_t)comp_id;
+		vcmd.target_system = (uint8_t)_param_mav_sys_id.get();
+		vcmd.target_component = (uint8_t)_param_mav_comp_id.get();
+		vcmd.source_system = (uint8_t)_param_mav_sys_id.get();
+		vcmd.source_component = (uint8_t)_param_mav_comp_id.get();
 		vcmd.confirmation = true; /* ask to confirm command */
 
 		if (reg & PX4IO_P_SETUP_ARMING_FORCE_FAILSAFE) {
 			mavlink_log_emergency(&_mavlink_log_pub, "IO is in failsafe, force failsafe");
 			/* send command to terminate flight via command API */
-			vcmd.timestamp = hrt_absolute_time();
 			vcmd.param1 = 1.0f; /* request flight termination */
 			vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_FLIGHTTERMINATION;
 
 			/* send command once */
 			uORB::Publication<vehicle_command_s> vcmd_pub{ORB_ID(vehicle_command)};
+			vcmd.timestamp = hrt_absolute_time();
 			vcmd_pub.publish(vcmd);
 
 			/* spin here until IO's state has propagated into the system */
@@ -924,54 +902,35 @@ void PX4IO::Run()
 				/* Tell IO that it can terminate the flight if FMU is not responding or if a failure has been reported by the FailureDetector logic */
 				io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_ENABLE_FLIGHTTERMINATION, !_cb_flighttermination);
 
-				param_get(param_find("RC_RSSI_PWM_CHAN"), &_rssi_pwm_chan);
-				param_get(param_find("RC_RSSI_PWM_MAX"), &_rssi_pwm_max);
-				param_get(param_find("RC_RSSI_PWM_MIN"), &_rssi_pwm_min);
+				if (_param_sens_en_themal.get() != _thermal_control || _param_update_force) {
 
-				param_t thermal_param = param_find("SENS_EN_THERMAL");
+					_thermal_control = _param_sens_en_themal.get();
+					/* set power management state for thermal */
+					uint16_t tctrl;
 
-				if (thermal_param != PARAM_INVALID) {
+					if (_thermal_control < 0) {
+						tctrl = PX4IO_THERMAL_IGNORE;
 
-					int32_t thermal_p = 0;
-					param_get(thermal_param, &thermal_p);
-
-					if (thermal_p != _thermal_control || _param_update_force) {
-
-						_thermal_control = thermal_p;
-						/* set power management state for thermal */
-						uint16_t tctrl;
-
-						if (_thermal_control < 0) {
-							tctrl = PX4IO_THERMAL_IGNORE;
-
-						} else {
-							tctrl = PX4IO_THERMAL_OFF;
-						}
-
-						io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_THERMAL, tctrl);
+					} else {
+						tctrl = PX4IO_THERMAL_OFF;
 					}
+
+					io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_THERMAL, tctrl);
 				}
 
 				/* S.BUS output */
-				int32_t sbus_mode = 0;
-				param_t parm_handle = param_find("PWM_SBUS_MODE");
+				if (_param_pwm_sbus_mode.get() == 1) {
+					/* enable S.BUS 1 */
+					io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES, 0, PX4IO_P_SETUP_FEATURES_SBUS1_OUT);
 
-				if (parm_handle != PARAM_INVALID) {
-					param_get(parm_handle, &sbus_mode);
+				} else if (_param_pwm_sbus_mode.get() == 2) {
+					/* enable S.BUS 2 */
+					io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES, 0, PX4IO_P_SETUP_FEATURES_SBUS2_OUT);
 
-					if (sbus_mode == 1) {
-						/* enable S.BUS 1 */
-						io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES, 0, PX4IO_P_SETUP_FEATURES_SBUS1_OUT);
-
-					} else if (sbus_mode == 2) {
-						/* enable S.BUS 2 */
-						io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES, 0, PX4IO_P_SETUP_FEATURES_SBUS2_OUT);
-
-					} else {
-						/* disable S.BUS */
-						io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES,
-							      (PX4IO_P_SETUP_FEATURES_SBUS1_OUT | PX4IO_P_SETUP_FEATURES_SBUS2_OUT), 0);
-					}
+				} else {
+					/* disable S.BUS */
+					io_reg_modify(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FEATURES,
+						      (PX4IO_P_SETUP_FEATURES_SBUS1_OUT | PX4IO_P_SETUP_FEATURES_SBUS2_OUT), 0);
 				}
 			}
 		}
@@ -1157,18 +1116,13 @@ int PX4IO::io_set_rc_config()
 	//int32_t ichan;
 	int ret = OK;
 
-	/*
-	 * Generate the input channel -> control channel mapping table;
-	 * assign RC_MAP_ROLL/PITCH/YAW/THROTTLE to the canonical
-	 * controls.
-	 */
-
 	/* fill the mapping with an error condition triggering value */
 	for (unsigned i = 0; i < _max_rc_input; i++) {
 		input_map[i] = UINT8_MAX;
 	}
 
 	/* KILL SWITCH */
+	_param_rc_map_kill_sw.get();
 	//param_get(param_find("RC_MAP_KILL_SW"), &ichan);
 
 	//if ((ichan > 0) && (ichan <= (int)_max_rc_input)) {
@@ -1530,11 +1484,14 @@ int PX4IO::io_publish_raw_rc()
 	}
 
 	/* get RSSI from input channel */
-	if (_rssi_pwm_chan > 0 && _rssi_pwm_chan <= input_rc_s::RC_INPUT_MAX_CHANNELS && _rssi_pwm_max - _rssi_pwm_min != 0) {
-		int rssi = ((input_rc.values[_rssi_pwm_chan - 1] - _rssi_pwm_min) * 100) /
-			   (_rssi_pwm_max - _rssi_pwm_min);
+	if (_param_rc_rssi_pwm_chan.get() > 0 && _param_rc_rssi_pwm_chan.get() <= input_rc_s::RC_INPUT_MAX_CHANNELS) {
+		const auto &min = _param_rc_rssi_pwm_min.get();
+		const auto &max = _param_rc_rssi_pwm_max.get();
 
-		input_rc.rssi = math::constrain(rssi, 0, 100);
+		if (max - min != 0) {
+			int rssi = ((input_rc.values[_param_rc_rssi_pwm_chan.get() - 1] - min) * 100) / (max - min);
+			input_rc.rssi = math::constrain(rssi, 0, 100);
+		}
 	}
 
 	/* sort out the source of the values */
