@@ -71,6 +71,7 @@
 #include <uORB/topics/input_rc.h>
 #include <uORB/topics/safety.h>
 #include <uORB/topics/vehicle_command.h>
+#include <uORB/topics/vehicle_command_ack.h>
 #include <uORB/topics/px4io_status.h>
 #include <uORB/topics/parameter_update.h>
 
@@ -359,9 +360,17 @@ private:
 	/**
 	 * Handle issuing dsm bind ioctl to px4io.
 	 *
-	 * @param dsmMode	0:dsm2, 1:dsmx
+	 * @param dsmMode	DSM2_BIND_PULSES, DSMX_BIND_PULSES, DSMX8_BIND_PULSES
 	 */
-	void			dsm_bind_ioctl(int dsmMode);
+	int			dsm_bind_ioctl(int dsmMode);
+
+	/**
+	 * Respond to a vehicle command with an ACK message
+	 *
+	 * @param cmd		The command that was executed or denied (inbound)
+	 * @param result	The command result
+	 */
+	void			answer_command(const vehicle_command_s &cmd, uint8_t result);
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::MAV_COMP_ID>) _param_mav_comp_id,
@@ -853,8 +862,33 @@ void PX4IO::Run()
 				_t_vehicle_command.copy(&cmd);
 
 				// Check for a DSM pairing command
-				if ((cmd.command == vehicle_command_s::VEHICLE_CMD_START_RX_PAIR) && ((int)cmd.param1 == 0)) {
-					dsm_bind_ioctl((int)cmd.param2);
+				if (((unsigned int)cmd.command == vehicle_command_s::VEHICLE_CMD_START_RX_PAIR) && ((int)cmd.param1 == 0)) {
+					int bind_arg;
+
+					switch ((int)cmd.param2) {
+					case 0:
+						bind_arg = DSM2_BIND_PULSES;
+						break;
+
+					case 1:
+						bind_arg = DSMX_BIND_PULSES;
+						break;
+
+					case 2:
+					default:
+						bind_arg = DSMX8_BIND_PULSES;
+						break;
+					}
+
+					int dsm_ret = dsm_bind_ioctl(bind_arg);
+
+					/* publish ACK */
+					if (dsm_ret == OK) {
+						answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED);
+
+					} else {
+						answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_FAILED);
+					}
 				}
 			}
 
@@ -980,6 +1014,19 @@ void PX4IO::update_pwm_rev_mask()
 			reverse_pwm_mask |= ((int16_t)(ival != 0)) << i;
 		}
 	}
+}
+
+void PX4IO::answer_command(const vehicle_command_s &cmd, uint8_t result)
+{
+	/* publish ACK */
+	uORB::Publication<vehicle_command_ack_s> vehicle_command_ack_pub{ORB_ID(vehicle_command_ack)};
+	vehicle_command_ack_s command_ack{};
+	command_ack.command = cmd.command;
+	command_ack.result = result;
+	command_ack.target_system = cmd.source_system;
+	command_ack.target_component = cmd.source_component;
+	command_ack.timestamp = hrt_absolute_time();
+	vehicle_command_ack_pub.publish(command_ack);
 }
 
 void PX4IO::update_pwm_trims()
@@ -1223,20 +1270,61 @@ int PX4IO::io_handle_status(uint16_t status)
 	return ret;
 }
 
-void PX4IO::dsm_bind_ioctl(int dsmMode)
+int PX4IO::dsm_bind_ioctl(int dsmMode)
 {
-	if (!(_status & PX4IO_P_STATUS_FLAGS_SAFETY_OFF)) {
-		mavlink_log_info(&_mavlink_log_pub, "[IO] binding DSM%s RX", (dsmMode == 0) ? "2" : ((dsmMode == 1) ? "-X" : "-X8"));
-		int ret = ioctl(nullptr, DSM_BIND_START,
-				(dsmMode == 0) ? DSM2_BIND_PULSES : ((dsmMode == 1) ? DSMX_BIND_PULSES : DSMX8_BIND_PULSES));
-
-		if (ret) {
-			mavlink_log_critical(&_mavlink_log_pub, "binding failed.");
-		}
-
-	} else {
-		mavlink_log_info(&_mavlink_log_pub, "[IO] safety off, bind request rejected");
+	// Do not bind if invalid pulses are provided
+	if (dsmMode != DSM2_BIND_PULSES &&
+	    dsmMode != DSMX_BIND_PULSES &&
+	    dsmMode != DSMX8_BIND_PULSES) {
+		PX4_ERR("Unknown DSM mode: %d", dsmMode);
+		return -EINVAL;
 	}
+
+	// Do not bind if armed
+	bool armed = (_status & PX4IO_P_SETUP_ARMING_FMU_ARMED);
+
+	if (armed) {
+		PX4_ERR("Not binding DSM, system is armed.");
+		return -EINVAL;
+	}
+
+	// Check if safety was off
+	bool safety_off = (_status & PX4IO_P_STATUS_FLAGS_SAFETY_OFF);
+	int ret = -1;
+
+	// Put safety on
+	if (safety_off) {
+		// re-enable safety
+		ret = io_reg_modify(PX4IO_PAGE_STATUS, PX4IO_P_STATUS_FLAGS, PX4IO_P_STATUS_FLAGS_SAFETY_OFF, 0);
+
+		// set new status
+		_status &= ~(PX4IO_P_STATUS_FLAGS_SAFETY_OFF);
+	}
+
+	PX4_INFO("Binding DSM%s RX", (dsmMode == DSM2_BIND_PULSES) ? "2" : ((dsmMode == DSMX_BIND_PULSES) ? "-X" : "-X8"));
+
+	io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_DSM, dsm_bind_power_down);
+	px4_usleep(500000);
+	io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_DSM, dsm_bind_set_rx_out);
+	io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_DSM, dsm_bind_power_up);
+	px4_usleep(72000);
+	io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_DSM, dsm_bind_send_pulses | (dsmMode << 4));
+	px4_usleep(50000);
+	io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_DSM, dsm_bind_reinit_uart);
+	ret = OK;
+
+	// Put safety back off
+	if (safety_off) {
+		ret = io_reg_modify(PX4IO_PAGE_STATUS, PX4IO_P_STATUS_FLAGS, 0,
+				    PX4IO_P_STATUS_FLAGS_SAFETY_OFF);
+		_status |= PX4IO_P_STATUS_FLAGS_SAFETY_OFF;
+	}
+
+	if (ret != OK) {
+		PX4_INFO("Binding DSM failed");
+	}
+
+	return ret;
 }
 
 int PX4IO::io_get_status()
