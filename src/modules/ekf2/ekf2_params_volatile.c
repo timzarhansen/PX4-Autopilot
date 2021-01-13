@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2013 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,20 +32,12 @@
  ****************************************************************************/
 
 /**
- * @file Rangefinder driver interface.
+ * Magnetic declination
+ *
+ * @group EKF2
+ * @volatile
+ * @category system
+ * @unit deg
+ * @decimal 1
  */
-
-#ifndef _DRV_RANGEFINDER_H
-#define _DRV_RANGEFINDER_H
-
-#include <stdint.h>
-#include <sys/ioctl.h>
-
-#include "drv_sensor.h"
-#include "drv_orb_dev.h"
-
-#define RANGE_FINDER_BASE_DEVICE_PATH	"/dev/range_finder"
-#define RANGE_FINDER0_DEVICE_PATH	"/dev/range_finder0"
-#define RANGE_FINDER_MAX_SENSORS	12	// Maximum number of sensors on bus
-
-#endif /* _DRV_RANGEFINDER_H */
+PARAM_DEFINE_FLOAT(EKF2_MAG_DECL, 0);
