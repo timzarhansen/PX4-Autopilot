@@ -113,6 +113,7 @@ using matrix::wrap_2pi;
 #include "streams/HIGH_LATENCY2.hpp"
 #include "streams/HIL_ACTUATOR_CONTROLS.hpp"
 #include "streams/HIL_STATE_QUATERNION.hpp"
+#include "streams/LINK_NODE_STATUS.hpp"
 #include "streams/MANUAL_CONTROL.hpp"
 #include "streams/MOUNT_ORIENTATION.hpp"
 #include "streams/NAV_CONTROLLER_OUTPUT.hpp"
@@ -3380,6 +3381,9 @@ static const StreamListItem streams_list[] = {
 #if defined(GPS_STATUS_HPP)
 	create_stream_list_item<MavlinkStreamGPSStatus>(),
 #endif // GPS_STATUS_HPP
+#if defined(LINK_NODE_STATUS_HPP)
+	create_stream_list_item<MavlinkStreamLinkNodeStatus>(),
+#endif // LINK_NODE_STATUS_HPP
 #if defined(STORAGE_INFORMATION_HPP)
 	create_stream_list_item<MavlinkStreamStorageInformation>(),
 #endif // STORAGE_INFORMATION_HPP
