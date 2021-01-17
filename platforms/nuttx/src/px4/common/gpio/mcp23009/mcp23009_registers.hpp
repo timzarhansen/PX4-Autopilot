@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2018 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,48 +31,38 @@
  *
  ****************************************************************************/
 
-/**
- * @@file FlightTasks_generated.hpp
- *
- * Generated Header to list all required flight tasks
- *
- * @@author Christoph Tobler <christoph@@px4.io>
- */
+#pragma once
 
- #pragma once
+#include <stdint.h>
 
-// include all required headers
-#include "FlightTasks.hpp"
-@# loop through all requested tasks
-@[if tasks]@
-@[for task in tasks]@
-#include "FlightTask@(task).hpp"
-@[end for]@
-@[end if]@
+// TODO: move to a central header
+static constexpr uint8_t Bit0 = (1 << 0);
+static constexpr uint8_t Bit1 = (1 << 1);
+static constexpr uint8_t Bit2 = (1 << 2);
+static constexpr uint8_t Bit3 = (1 << 3);
+static constexpr uint8_t Bit4 = (1 << 4);
+static constexpr uint8_t Bit5 = (1 << 5);
+static constexpr uint8_t Bit6 = (1 << 6);
+static constexpr uint8_t Bit7 = (1 << 7);
 
-enum class FlightTaskIndex : int {
-    None = -1,
-@# loop through all requested tasks
-@[if tasks]@
-@[for task in tasks]@
-    @(task),
-@[end for]@
-@[end if]@
+namespace Microchip_MCP23009
+{
 
-    Count // number of tasks
+enum class
+Register : uint8_t {
+
+	IODIR       = 0x00,
+	IPOL        = 0x01,
+	GPINTEN     = 0x02,
+	DEFVAL      = 0x03,
+	INTCON      = 0x04,
+	IOCON       = 0x05,
+	GPPU        = 0x06,
+	INTF        = 0x07,
+	INTCAP      = 0x08,
+	GPIO        = 0x09,
+	OLAT        = 0x0a
+
 };
 
-union TaskUnion {
-    TaskUnion() {}
-    ~TaskUnion() {}
-
-@# loop through all requested tasks
-@[if tasks]@
-@{
-firstLowercase = lambda s: s[:1].lower() + s[1:] if s else ''
-}@
-@[for task in tasks]@
-    FlightTask@(task) @(firstLowercase(task));
-@[end for]@
-@[end if]@
-};
+} // namespace Microchip_MCP23009
