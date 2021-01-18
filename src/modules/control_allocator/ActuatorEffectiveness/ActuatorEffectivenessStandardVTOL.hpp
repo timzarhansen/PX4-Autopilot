@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2016 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,82 +32,33 @@
  ****************************************************************************/
 
 /**
- * @file mag_i2c.cpp
+ * @file ActuatorEffectivenessStandardVTOL.hpp
  *
- * I2C interface for AK8963
+ * Actuator effectiveness for standard VTOL
+ *
+ * @author Julien Lecoeur <julien.lecoeur@gmail.com>
  */
 
-#include <px4_platform_common/px4_config.h>
-#include <drivers/device/i2c.h>
+#pragma once
 
-#include "mpu9250.h"
-#include "MPU9250_mag.h"
+#include "ActuatorEffectiveness.hpp"
 
-#ifdef USE_I2C
-
-device::Device *AK8963_I2C_interface(int bus, int bus_frequency);
-
-class AK8963_I2C : public device::I2C
+class ActuatorEffectivenessStandardVTOL: public ActuatorEffectiveness
 {
 public:
-	AK8963_I2C(int bus, int bus_frequency);
-	~AK8963_I2C() override = default;
+	ActuatorEffectivenessStandardVTOL();
+	virtual ~ActuatorEffectivenessStandardVTOL() = default;
 
-	int	read(unsigned address, void *data, unsigned count) override;
-	int	write(unsigned address, void *data, unsigned count) override;
+	bool getEffectivenessMatrix(matrix::Matrix<float, NUM_AXES, NUM_ACTUATORS> &matrix) override;
 
+	/**
+	 * Set the current flight phase
+	 *
+	 * @param Flight phase
+	 */
+	void setFlightPhase(const FlightPhase &flight_phase) override;
+
+	int numActuators() const override { return 7; }
 protected:
-	int	probe() override;
-
+	bool _updated{true};
 };
-
-device::Device *
-AK8963_I2C_interface(int bus, int bus_frequency)
-{
-	return new AK8963_I2C(bus, bus_frequency);
-}
-
-AK8963_I2C::AK8963_I2C(int bus, int bus_frequency) :
-	I2C(DRV_MAG_DEVTYPE_AK8963, "AK8963_I2C", bus, AK8963_I2C_ADDR, bus_frequency)
-{
-}
-
-int
-AK8963_I2C::write(unsigned reg_speed, void *data, unsigned count)
-{
-	uint8_t cmd[2] {};
-
-	if (sizeof(cmd) < (count + 1)) {
-		return -EIO;
-	}
-
-	cmd[0] = MPU9250_REG(reg_speed);
-	cmd[1] = *(uint8_t *)data;
-	return transfer(&cmd[0], count + 1, nullptr, 0);
-}
-
-int
-AK8963_I2C::read(unsigned reg_speed, void *data, unsigned count)
-{
-	uint8_t cmd = MPU9250_REG(reg_speed);
-	return transfer(&cmd, 1, (uint8_t *)data, count);
-}
-
-int
-AK8963_I2C::probe()
-{
-	uint8_t whoami = 0;
-	uint8_t expected = AK8963_DEVICE_ID;
-
-	if (PX4_OK != read(AK8963REG_WIA, &whoami, 1)) {
-		return -EIO;
-	}
-
-	if (whoami != expected) {
-		return -EIO;
-	}
-
-	return OK;
-}
-
-#endif

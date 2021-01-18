@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2016 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2019 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,20 +30,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-px4_add_module(
-	MODULE drivers__mpu9250
-	MAIN mpu9250
-	COMPILE_FLAGS
-	SRCS
-		AK8963_I2C.cpp
-		mpu9250.cpp
-		mpu9250_i2c.cpp
-		MPU9250_mag.cpp
-		mpu9250_main.cpp
-		mpu9250_spi.cpp
-	DEPENDS
-		px4_work_queue
-		drivers_accelerometer
-		drivers_gyroscope
-		drivers_magnetometer
-	)
+
+px4_add_library(AngularVelocityControl
+	AngularVelocityControl.cpp
+)
+target_compile_options(AngularVelocityControl PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
+target_include_directories(AngularVelocityControl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(AngularVelocityControl PRIVATE mathlib)
+
+px4_add_unit_gtest(SRC AngularVelocityControlTest.cpp LINKLIBS AngularVelocityControl)
