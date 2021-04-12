@@ -46,7 +46,7 @@
 
 #include <float.h>
 
-using matrix::Vector2f;
+using matrix::Vector2d;
 using matrix::Vector2f;
 using matrix::wrap_pi;
 
@@ -73,8 +73,8 @@ float ECL_L1_Pos_Controller::switch_distance(float wp_radius)
 }
 
 void
-ECL_L1_Pos_Controller::navigate_waypoints(const Vector2f &vector_A, const Vector2f &vector_B,
-		const Vector2f &vector_curr_position, const Vector2f &ground_speed_vector)
+ECL_L1_Pos_Controller::navigate_waypoints(const Vector2d &vector_A, const Vector2d &vector_B,
+		const Vector2d &vector_curr_position, const Vector2f &ground_speed_vector)
 {
 	/* this follows the logic presented in [1] */
 	float eta = 0.0f;
@@ -208,7 +208,7 @@ ECL_L1_Pos_Controller::navigate_waypoints(const Vector2f &vector_A, const Vector
 }
 
 void
-ECL_L1_Pos_Controller::navigate_loiter(const Vector2f &vector_A, const Vector2f &vector_curr_position, float radius,
+ECL_L1_Pos_Controller::navigate_loiter(const Vector2d &vector_A, const Vector2d &vector_curr_position, float radius,
 				       int8_t loiter_direction, const Vector2f &ground_speed_vector)
 {
 	/* the complete guidance logic in this section was proposed by [2] */
@@ -363,7 +363,7 @@ void ECL_L1_Pos_Controller::navigate_level_flight(float current_heading)
 	update_roll_setpoint();
 }
 
-Vector2f ECL_L1_Pos_Controller::get_local_planar_vector(const Vector2f &origin, const Vector2f &target) const
+Vector2f ECL_L1_Pos_Controller::get_local_planar_vector(const Vector2d &origin, const Vector2d &target) const
 {
 	/* this is an approximation for small angles, proposed by [2] */
 	const double x_angle = math::radians(target(0) - origin(0));
