@@ -29,7 +29,7 @@ px4_add_board(
 		#distance_sensor/ll40ls
 		#distance_sensor/lightware_laser_serial
 		#dshot
-		gps
+		#gps
 		#heater
 		#imu # all available imu drivers
 		#imu/analog_devices/adis16448
@@ -43,7 +43,7 @@ px4_add_board(
 		#lights # all available light drivers
 		lights/rgbled
 		#magnetometer # all available magnetometer drivers
-		magnetometer/hmc5883
+		#magnetometer/hmc5883
 		#optical_flow # all available optical flow drivers
 		#osd
 		#pca9685
@@ -70,18 +70,18 @@ px4_add_board(
 		#esc_battery
 		#events
 		flight_mode_manager
-		fw_att_control
-		fw_pos_control_l1
-		gyro_calibration
+		#fw_att_control
+		#fw_pos_control_l1
+		#gyro_calibration
 		#gyro_fft
 		land_detector
 		#landing_target_estimator
 		load_mon
 		#local_position_estimator
-		logger
+		#logger
 		mavlink
 		mc_att_control
-		mc_hover_thrust_estimator
+		#mc_hover_thrust_estimator
 		mc_pos_control
 		mc_rate_control
 		#micrortps_bridge
@@ -91,8 +91,9 @@ px4_add_board(
 		sensors
 		#sih
 		#temperature_compensation
-		#uuv_att_control
-		#uuv_pos_control
+		uuv_att_control
+		uuv_pos_control
+		uuv_payload_control
 		#vmount
 		#vtol_att_control
 	SYSTEMCMDS
@@ -100,12 +101,12 @@ px4_add_board(
 		#dmesg
 		#dumpfile
 		#esc_calib
-		#gpio
+		gpio
 		hardfault_log
-		#i2cdetect
+		i2cdetect
 		#led_control
 		mft
-		mixer
+		#mixer
 		#motor_ramp
 		#motor_test
 		mtd
@@ -120,8 +121,8 @@ px4_add_board(
 		#system_time
 		top
 		#topic_listener
-		tune_control
-		#uorb
+		#tune_control
+		uorb
 		#usb_connected
 		#ver
 		#work_queue

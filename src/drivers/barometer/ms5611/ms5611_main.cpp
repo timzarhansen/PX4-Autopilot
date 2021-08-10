@@ -86,7 +86,7 @@ void MS5611::print_usage()
 	PRINT_MODULE_USAGE_SUBCATEGORY("baro");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, true);
-	PRINT_MODULE_USAGE_PARAM_STRING('T', "5611", "5607|5611", "Device type", true);
+	PRINT_MODULE_USAGE_PARAM_STRING('T', "5611", "5607|5611|5837", "Device type", true);
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 }
 
@@ -96,6 +96,7 @@ extern "C" int ms5611_main(int argc, char *argv[])
 	int ch;
 	BusCLIArguments cli{true, true};
 	cli.type = MS5611_DEVICE;
+    cli.type = MS5837_DEVICE;//HACK BECAUSE SENSOR IS NOT DETECTED
 	cli.default_i2c_frequency = 400000;
 	cli.default_spi_frequency = 20 * 1000 * 1000;
 	uint16_t dev_type_driver = DRV_BARO_DEVTYPE_MS5611;
@@ -112,6 +113,10 @@ extern "C" int ms5611_main(int argc, char *argv[])
 				} else if (val == 5607) {
 					cli.type = MS5607_DEVICE;
 					dev_type_driver = DRV_BARO_DEVTYPE_MS5607;
+
+				} else if (val == 5837) {
+					cli.type = MS5837_DEVICE;
+					dev_type_driver = DRV_BARO_DEVTYPE_MS5837;
 				}
 			}
 			break;

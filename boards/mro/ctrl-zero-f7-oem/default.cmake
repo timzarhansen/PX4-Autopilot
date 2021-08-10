@@ -85,6 +85,7 @@ px4_add_board(
 		temperature_compensation
 		uuv_att_control
 		uuv_pos_control
+		uuv_payload_control
 		vmount
 		vtol_att_control
 	SYSTEMCMDS

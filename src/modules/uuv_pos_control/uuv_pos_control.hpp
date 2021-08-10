@@ -62,6 +62,7 @@
 #include <uORB/Publication.hpp>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
@@ -107,6 +108,8 @@ private:
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};	/**< notification of manual control updates */
 	uORB::Subscription _trajectory_setpoint_sub{ORB_ID(trajectory_setpoint)};
 	uORB::Subscription _vcontrol_mode_sub{ORB_ID(vehicle_control_mode)};		/**< vehicle status subscription */
+    uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)}; /**< has the barometer measurement, important for stabilization control(depth) */
+
 
 	uORB::SubscriptionCallbackWorkItem _vehicle_local_position_sub{this, ORB_ID(vehicle_local_position)};
 
@@ -127,7 +130,7 @@ private:
 		(ParamFloat<px4::params::UUV_GAIN_Z_D>) _param_pose_gain_d_z,
 
 		(ParamInt<px4::params::UUV_INPUT_MODE>) _param_input_mode,
-		(ParamInt<px4::params::UUV_STAB_MODE>) _param_stabilization,
+		(ParamInt<px4::params::UUV_REL_MODE>) _param_relative_mode,
 		(ParamInt<px4::params::UUV_SKIP_CTRL>) _param_skip_ctrl
 	)
 
@@ -145,7 +148,7 @@ private:
 	void pose_controller_6dof(const float x_pos_des, const float y_pos_des, const float z_pos_des,
 				  const float roll_des, const float pitch_des, const float yaw_des,
 				  vehicle_attitude_s &vehicle_attitude, vehicle_local_position_s &vlocal_pos);
-	void stabilization_controller_6dof(const float x_pos_des, const float y_pos_des, const float z_pos_des,
-					   const float roll_des, const float pitch_des, const float yaw_des,
-					   vehicle_attitude_s &vehicle_attitude, vehicle_local_position_s &vlocal_pos);
+	void relativeControllerXYYawAbsoluteControllerZRollPitch(const float x_pos_des, const float y_pos_des, const float z_pos_des,
+                                                             const float roll_des, const float pitch_des, const float yaw_des,
+                                                             vehicle_attitude_s &vehicle_attitude, const float &vertical_position);
 };

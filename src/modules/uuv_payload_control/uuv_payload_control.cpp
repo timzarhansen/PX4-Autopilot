@@ -38,12 +38,10 @@
  *
  * All the acknowledgments and credits for the fw wing/rover app are reported in those files.
  *
- * @author Daniel Duecker <daniel.duecker@tuhh.de>
- * @author Philipp Hastedt <philipp.hastedt@tuhh.de>
  * @author Tim Hansen <t.hansen@tuhh.de>
  */
 
-#include "uuv_att_control.hpp"
+#include "uuv_payload_control.hpp"
 
 
 #define ACTUATOR_PUBLISH_PERIOD_MS 4
@@ -54,10 +52,10 @@
  *
  * @ingroup apps
  */
-extern "C" __EXPORT int uuv_att_control_main(int argc, char *argv[]);
+extern "C" __EXPORT int uuv_payload_control_main(int argc, char *argv[]);
 
 
-UUVAttitudeControl::UUVAttitudeControl():
+UUVPayloadControl::UUVPayloadControl():
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
 	/* performance counters */
@@ -65,12 +63,12 @@ UUVAttitudeControl::UUVAttitudeControl():
 {
 }
 
-UUVAttitudeControl::~UUVAttitudeControl()
+UUVPayloadControl::~UUVPayloadControl()
 {
 	perf_free(_loop_perf);
 }
 
-bool UUVAttitudeControl::init()
+bool UUVPayloadControl::init()
 {
 	if (!_vehicle_attitude_sub.registerCallback()) {
 		PX4_ERR("vehicle_attitude callback registration failed!");
@@ -81,7 +79,7 @@ bool UUVAttitudeControl::init()
 	return true;
 }
 
-void UUVAttitudeControl::parameters_update(bool force)
+void UUVPayloadControl::parameters_update(bool force)
 {
 	// check for parameter updates
 	if (_parameter_update_sub.updated() || force) {
@@ -94,7 +92,7 @@ void UUVAttitudeControl::parameters_update(bool force)
 	}
 }
 
-void UUVAttitudeControl::constrain_actuator_commands(float roll_u, float pitch_u, float yaw_u,
+void UUVPayloadControl::constrain_actuator_commands(float roll_u, float pitch_u, float yaw_u,
 		float thrust_x, float thrust_y, float thrust_z)
 {
 	if (PX4_ISFINITE(roll_u)) {
@@ -146,7 +144,7 @@ void UUVAttitudeControl::constrain_actuator_commands(float roll_u, float pitch_u
 	}
 }
 
-void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude,
+void UUVPayloadControl::control_attitude_geo(const vehicle_attitude_s &attitude,
 		const vehicle_attitude_setpoint_s &attitude_setpoint, const vehicle_angular_velocity_s &angular_velocity,
 		const vehicle_rates_setpoint_s &rates_setpoint)
 {
@@ -220,7 +218,7 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	/* Geometric Controller END*/
 }
 
-void UUVAttitudeControl::Run()
+void UUVPayloadControl::Run()
 {
 
 	if (should_exit()) {
@@ -237,88 +235,21 @@ void UUVAttitudeControl::Run()
 	/* update parameters from storage */
 	parameters_update();
 
-	vehicle_attitude_s attitude;
-
-	/* only run controller if attitude changed */
-	if (_vehicle_attitude_sub.update(&attitude)) {
-		vehicle_angular_velocity_s angular_velocity {};
-		_angular_velocity_sub.copy(&angular_velocity);
-
-		/* Run geometric attitude controllers if NOT manual mode*/
-		if (!_vcontrol_mode.flag_control_manual_enabled
-		    && _vcontrol_mode.flag_control_attitude_enabled
-		    && _vcontrol_mode.flag_control_rates_enabled) {
-
-			int input_mode = _param_input_mode.get();
-
-			_vehicle_attitude_setpoint_sub.update(&_attitude_setpoint);
-			_vehicle_rates_setpoint_sub.update(&_rates_setpoint);
-
-			if (input_mode == 1) { // process manual data
-				_attitude_setpoint.roll_body = _param_direct_roll.get();
-				_attitude_setpoint.pitch_body = _param_direct_pitch.get();
-				_attitude_setpoint.yaw_body = _param_direct_yaw.get();
-				_attitude_setpoint.thrust_body[0] = _param_direct_thrust.get();
-				_attitude_setpoint.thrust_body[1] = 0.f;
-				_attitude_setpoint.thrust_body[2] = 0.f;
-			}
-
-			/* Geometric Control*/
-			int skip_controller = _param_skip_ctrl.get();
-
-			if (skip_controller) {
-				constrain_actuator_commands(_rates_setpoint.roll, _rates_setpoint.pitch, _rates_setpoint.yaw,
-							    _rates_setpoint.thrust_body[0], _rates_setpoint.thrust_body[1], _rates_setpoint.thrust_body[2]);
-
-			} else {
-				control_attitude_geo(attitude, _attitude_setpoint, angular_velocity, _rates_setpoint);
-			}
-		}
-	}
-
 	/* Manual Control mode (e.g. gamepad,...) - raw feedthrough no assistance */
 	if (_manual_control_setpoint_sub.update(&_manual_control_setpoint)) {
 		// This should be copied even if not in manual mode. Otherwise, the poll(...) call will keep
 		// returning immediately and this loop will eat up resources.
-		// this is a stabilization control. Which means it holds the depth, while you can move in xy plane freely
-		// additionally up and down + yaw can be controlled. Roll Pitch = 0  all the time.
-        vehicle_local_position_s vlocal_pos;
-        _vehicle_local_position_sub.copy(&vlocal_pos);
-        vehicle_angular_velocity_s angular_velocity {};
-        _angular_velocity_sub.copy(&angular_velocity);
 
-		if (_vcontrol_mode.flag_control_manual_enabled && !_vcontrol_mode.flag_control_rates_enabled) {
+		//if (_vcontrol_mode.flag_control_manual_enabled && !_vcontrol_mode.flag_control_rates_enabled) {
             /* manual/direct control */
             //print_message(_manual_control_setpoint);
-            this->height -= 0.5f*(_manual_control_setpoint.z-0.5f);
-            if(abs(this->height-vlocal_pos.z)>0.5f){
-                this->height+=0.5f*(_manual_control_setpoint.z-0.5f);
-            }
-            this->yawAngle += 0.1f*_manual_control_setpoint.r;
-            if(this->yawAngle>(float)M_PI){
-                this->yawAngle = this->yawAngle-(float)(2*M_PI);
-            }
-            if(this->yawAngle<(float)-M_PI){
-                this->yawAngle = this->yawAngle+(float)(2*M_PI);
-            }
-            //printf("yaw angle = %f z positionDes = %f current z Position : %f \n",(double)this->yawAngle,(double)this->height,(double)vlocal_pos.z);
-            vehicle_rates_setpoint_s _rates_setpointdesired {};
-            vehicle_attitude_setpoint_s attitudeDesired;
-            attitudeDesired.roll_body = 0;
-            attitudeDesired.pitch_body = 0;
-            attitudeDesired.yaw_body = this->yawAngle;
-            attitudeDesired.thrust_body[0] = _manual_control_setpoint.x;
-            attitudeDesired.thrust_body[1] = _manual_control_setpoint.y;
-            attitudeDesired.thrust_body[2] = 1.0f*(this->height-vlocal_pos.z)-0.5f*vlocal_pos.vz;//@TODO has to be changed to barometer DATA
-
-            //control_attitude_geo(attitude, attitudeDesired, angular_velocity, _rates_setpointdesired);//@TODO has to be changed back for it to work.
 
 
 
-//			constrain_actuator_commands(_manual_control_setpoint.y, -_manual_control_setpoint.x,
-//						    _manual_control_setpoint.r,
-//						    _manual_control_setpoint.z, 0.f, 0.f);
-		}
+			constrain_actuator_commands(_manual_control_setpoint.x, -_manual_control_setpoint.y,
+						    _manual_control_setpoint.z,
+						    _manual_control_setpoint.r, _manual_control_setpoint.aux1, _manual_control_setpoint.aux2);
+		//}
 
 	}
 
@@ -335,9 +266,9 @@ void UUVAttitudeControl::Run()
 	perf_end(_loop_perf);
 }
 
-int UUVAttitudeControl::task_spawn(int argc, char *argv[])
+int UUVPayloadControl::task_spawn(int argc, char *argv[])
 {
-	UUVAttitudeControl *instance = new UUVAttitudeControl();
+	UUVPayloadControl *instance = new UUVPayloadControl();
 
 	if (instance) {
 		_object.store(instance);
@@ -358,13 +289,13 @@ int UUVAttitudeControl::task_spawn(int argc, char *argv[])
 	return PX4_ERROR;
 }
 
-int UUVAttitudeControl::custom_command(int argc, char *argv[])
+int UUVPayloadControl::custom_command(int argc, char *argv[])
 {
 	return print_usage("unknown command");
 }
 
 
-int UUVAttitudeControl::print_usage(const char *reason)
+int UUVPayloadControl::print_usage(const char *reason)
 {
 	if (reason) {
 		PX4_WARN("%s\n", reason);
@@ -398,7 +329,7 @@ $ uuv_att_control stop
 	return 0;
 }
 
-int uuv_att_control_main(int argc, char *argv[])
+int uuv_payload_control_main(int argc, char *argv[])
 {
-	return UUVAttitudeControl::main(argc, argv);
+	return UUVPayloadControl::main(argc, argv);
 }

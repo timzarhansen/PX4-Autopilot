@@ -32,66 +32,15 @@
  ****************************************************************************/
 
 /**
- * @file uuv_pos_control_params.c
+ * @file uuv_payload_control.c
  *
- * Parameters defined by the position control task for unmanned underwater vehicles (UUVs)
+ * Parameters defined by the attitude control task for unmanned underwater vehicles (UUVs)
  *
  * This is a modification of the fixed wing/ground rover params and it is designed for ground rovers.
  * It has been developed starting from the fw  module, simplified and improved with dedicated items.
  *
  * All the ackowledgments and credits for the fw wing/rover app are reported in those files.
  *
- * @author Tim Hansen <t.hansen@jacobs-university.de>
  * @author Daniel Duecker <daniel.duecker@tuhh.de>
  */
 
-/*
- * Controller parameters, accessible via MAVLink
- *
- */
-/**
- * Gain of P controller X
- *
- * @group UUV Position Control
- */
-PARAM_DEFINE_FLOAT(UUV_GAIN_X_P, 1.0f);
-/**
- * Gain of P controller Y
- *
- * @group UUV Position Control
- */
-PARAM_DEFINE_FLOAT(UUV_GAIN_Y_P, 1.0f);
-/**
- * Gain of P controller Z
- *
- * @group UUV Position Control
- */
-PARAM_DEFINE_FLOAT(UUV_GAIN_Z_P, 1.0f);
-
-/**
- * Gain of D controller X
- *
- * @group UUV Position Control
- */
-PARAM_DEFINE_FLOAT(UUV_GAIN_X_D, 0.2f);
-/**
- * Gain of D controller Y
- *
- * @group UUV Position Control
- */
-PARAM_DEFINE_FLOAT(UUV_GAIN_Y_D, 0.2f);
-/**
- * Gain of D controller Z
- *
- * @group UUV Position Control
- */
-PARAM_DEFINE_FLOAT(UUV_GAIN_Z_D, 0.2f);
-
-/**
- * RelativeControl mode(1) or Position Control(0) Relative for SLAM Purpose with jumping xy yaw values
- *
- * @value 0 Position Control
- * @value 1 RelativeControl Mode
- * @group UUV Position Control
- */
-PARAM_DEFINE_INT32(UUV_REL_MODE, 1);

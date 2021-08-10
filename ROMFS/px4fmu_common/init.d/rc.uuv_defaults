@@ -10,6 +10,8 @@ set VEHICLE_TYPE uuv
 param set-default PWM_MAIN_MAX 1950
 param set-default PWM_MAIN_MIN 1050
 param set-default PWM_MAIN_DISARM 1500
+param set-default PWM_AUX_DIS1 1000
+param set-default PWM_AUX_DIS2 1500
 
 #
 # PWM Hz - 50 Hz is the normal rate in RC cars, boats etc,

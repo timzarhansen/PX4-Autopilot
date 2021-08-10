@@ -229,12 +229,11 @@ void VehicleAirData::Run()
 			out.baro_pressure_pa = 100.0f * pressure - _thermal_offset[_selected_sensor_sub_index];
 
 			// calculate altitude using the hypsometric equation
-			static constexpr float T1 = 15.0f - CONSTANTS_ABSOLUTE_NULL_CELSIUS; // temperature at base height in Kelvin
-			static constexpr float a = -6.5f / 1000.0f; // temperature gradient in degrees per metre
+			//static constexpr float T1 = 15.0f - CONSTANTS_ABSOLUTE_NULL_CELSIUS; // temperature at base height in Kelvin
+			//static constexpr float a = -6.5f / 1000.0f; // temperature gradient in degrees per metre
 
 			// current pressure at MSL in kPa (QNH in hPa)
 			const float p1 = _param_sens_baro_qnh.get() * 0.1f;
-
 			// measured pressure in kPa
 			const float p = out.baro_pressure_pa * 0.001f;
 
@@ -247,8 +246,11 @@ void VehicleAirData::Run()
 			 * h = -------------------------------  + h1
 			 *                   a
 			 */
-			out.baro_alt_meter = (((powf((p / p1), (-(a * CONSTANTS_AIR_GAS_CONST) / CONSTANTS_ONE_G))) * T1) - T1) / a;
-
+			//out.baro_alt_meter = (((powf((p / p1), (-(a * CONSTANTS_AIR_GAS_CONST) / CONSTANTS_ONE_G))) * T1) - T1) / a;
+            out.baro_alt_meter = -((p-p1)*1000.0f)/(CONSTANTS_ONE_G*1000.0f);//calculation for water
+            //printf("p In Air Data: %f\n",(double)(p));
+            //printf("p1 In Air Data: %f\n",(double)(p1));
+            //printf("Alt Meter In Air Data: %f\n",(double)(out.baro_alt_meter));
 			// calculate air density
 			// estimate air density assuming typical 20degC ambient temperature
 			// TODO: use air temperature if available (differential pressure sensors)

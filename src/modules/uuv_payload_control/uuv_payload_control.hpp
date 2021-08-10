@@ -38,8 +38,6 @@
  *
  * All the acknowledgments and credits for the fw wing app are reported in those files.
  *
- * @author Daniel Duecker <daniel.duecker@tuhh.de>
- * @author Philipp Hastedt <philipp.hastedt@tuhh.de>
  * @author Tim Hansen <t.hansen@tuhh.de>
  */
 
@@ -82,11 +80,11 @@ using uORB::SubscriptionData;
 
 using namespace time_literals;
 
-class UUVAttitudeControl: public ModuleBase<UUVAttitudeControl>, public ModuleParams, public px4::WorkItem
+class UUVPayloadControl: public ModuleBase<UUVPayloadControl>, public ModuleParams, public px4::WorkItem
 {
 public:
-	UUVAttitudeControl();
-	~UUVAttitudeControl();
+    UUVPayloadControl();
+	~UUVPayloadControl();
 
 	/** @see ModuleBase */
 	static int task_spawn(int argc, char *argv[]);
@@ -99,7 +97,7 @@ public:
 	bool init();
 
 private:
-	uORB::Publication<actuator_controls_s> _actuator_controls_pub{ORB_ID(actuator_controls_0)};
+	uORB::Publication<actuator_controls_s> _actuator_controls_pub{ORB_ID(actuator_controls_2)};
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
