@@ -246,9 +246,9 @@ void UUVPayloadControl::Run()
 
 
 
-			constrain_actuator_commands(_manual_control_setpoint.x, -_manual_control_setpoint.y,
-						    _manual_control_setpoint.z,
-						    _manual_control_setpoint.r, _manual_control_setpoint.aux1, _manual_control_setpoint.aux2);
+			constrain_actuator_commands(_manual_control_setpoint.y, -_manual_control_setpoint.x,
+						    _manual_control_setpoint.r,
+						    _manual_control_setpoint.z, _manual_control_setpoint.aux1, _manual_control_setpoint.aux2);
 		//}
 
 	}

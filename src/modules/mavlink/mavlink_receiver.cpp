@@ -1976,7 +1976,24 @@ MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 		manual.r = man.r / 1000.0f;
 		manual.z = man.z / 1000.0f;
 		manual.data_source = manual_control_setpoint_s::SOURCE_MAVLINK_0 + _mavlink->get_instance_id();
+        const int sizeAUX = 8;
+        bool b[sizeAUX];
+        int v = 7;  // number to dissect
 
+        b [0] =  0 != (v & (1 << 0));
+        b [1] =  0 != (v & (1 << 1));
+        b [2] =  0 != (v & (1 << 2));
+        b [3] =  0 != (v & (1 << 3));
+        b [4] =  0 != (v & (1 << 0));
+        b [5] =  0 != (v & (1 << 1));
+
+
+        manual.aux1 = b[0];
+        manual.aux2 = b[1];
+        manual.aux3 = b[2];
+        manual.aux4 = b[3];
+        manual.aux5 = b[4];
+        manual.aux6 = b[5];
 		_manual_control_setpoint_pub.publish(manual);
 	}
 }

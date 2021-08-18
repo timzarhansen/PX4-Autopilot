@@ -206,17 +206,22 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	torques(1) = torques(1) - omega(1) * _param_pitch_d.get(); /**< Pitch */
 	torques(2) = torques(2) - omega(2) * _param_yaw_d.get();   /**< Yaw   */
 
-	roll_u = torques(0);
-	pitch_u = torques(1);
-	yaw_u = torques(2);
-
+//	roll_u = torques(0);
+//	pitch_u = torques(1);
+//	yaw_u = torques(2);
+    roll_u = torques(0)-torques(0);
+	pitch_u = torques(1)-torques(1);
+	yaw_u = torques(2)-torques(2);
 	// take thrust as
-	thrust_x = attitude_setpoint.thrust_body[0];
-	thrust_y = attitude_setpoint.thrust_body[1];
-	thrust_z = attitude_setpoint.thrust_body[2];
+//	thrust_x = attitude_setpoint.thrust_body[0];
+//	thrust_y = attitude_setpoint.thrust_body[1];
+//	thrust_z = attitude_setpoint.thrust_body[2];
+    thrust_x = attitude_setpoint.thrust_body[0]-attitude_setpoint.thrust_body[0];
+    thrust_y = attitude_setpoint.thrust_body[1]-attitude_setpoint.thrust_body[1];
+    thrust_z = attitude_setpoint.thrust_body[2]-attitude_setpoint.thrust_body[2];
 
+	constrain_actuator_commands(roll_u, pitch_u, yaw_u, thrust_x, thrust_y, thrust_z);//thats the correct one
 
-	constrain_actuator_commands(roll_u, pitch_u, yaw_u, thrust_x, thrust_y, thrust_z);
 	/* Geometric Controller END*/
 }
 
@@ -311,7 +316,7 @@ void UUVAttitudeControl::Run()
             attitudeDesired.thrust_body[1] = _manual_control_setpoint.y;
             attitudeDesired.thrust_body[2] = 1.0f*(this->height-vlocal_pos.z)-0.5f*vlocal_pos.vz;//@TODO has to be changed to barometer DATA
 
-            //control_attitude_geo(attitude, attitudeDesired, angular_velocity, _rates_setpointdesired);//@TODO has to be changed back for it to work.
+            control_attitude_geo(attitude, attitudeDesired, angular_velocity, _rates_setpointdesired);//@TODO has to be changed back for it to work.
 
 
 
