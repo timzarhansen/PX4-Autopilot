@@ -213,12 +213,12 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	pitch_u = torques(1)-torques(1);
 	yaw_u = torques(2)-torques(2);
 	// take thrust as
-//	thrust_x = attitude_setpoint.thrust_body[0];
-//	thrust_y = attitude_setpoint.thrust_body[1];
-//	thrust_z = attitude_setpoint.thrust_body[2];
-    thrust_x = attitude_setpoint.thrust_body[0]-attitude_setpoint.thrust_body[0];
-    thrust_y = attitude_setpoint.thrust_body[1]-attitude_setpoint.thrust_body[1];
-    thrust_z = attitude_setpoint.thrust_body[2]-attitude_setpoint.thrust_body[2];
+	thrust_x = attitude_setpoint.thrust_body[0];
+	thrust_y = attitude_setpoint.thrust_body[1];
+	thrust_z = attitude_setpoint.thrust_body[2];
+//    thrust_x = attitude_setpoint.thrust_body[0]-attitude_setpoint.thrust_body[0];
+//    thrust_y = attitude_setpoint.thrust_body[1]-attitude_setpoint.thrust_body[1];
+//    thrust_z = attitude_setpoint.thrust_body[2]-attitude_setpoint.thrust_body[2];
 
 	constrain_actuator_commands(roll_u, pitch_u, yaw_u, thrust_x, thrust_y, thrust_z);//thats the correct one
 
