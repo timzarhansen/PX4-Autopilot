@@ -57,6 +57,7 @@
 extern "C" __EXPORT int uuv_att_control_main(int argc, char *argv[]);
 
 
+
 UUVAttitudeControl::UUVAttitudeControl():
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
@@ -206,12 +207,12 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	torques(1) = torques(1) - omega(1) * _param_pitch_d.get(); /**< Pitch */
 	torques(2) = torques(2) - omega(2) * _param_yaw_d.get();   /**< Yaw   */
 
-//	roll_u = torques(0);
-//	pitch_u = torques(1);
-//	yaw_u = torques(2);
-    roll_u = torques(0)-torques(0);
-	pitch_u = torques(1)-torques(1);
-	yaw_u = torques(2)-torques(2);
+	roll_u = torques(0);
+	pitch_u = torques(1);
+	yaw_u = torques(2);
+//    roll_u = torques(0)-torques(0);
+//	pitch_u = torques(1)-torques(1);
+//	yaw_u = torques(2)-torques(2);
 	// take thrust as
 	thrust_x = attitude_setpoint.thrust_body[0];
 	thrust_y = attitude_setpoint.thrust_body[1];
@@ -295,9 +296,12 @@ void UUVAttitudeControl::Run()
 		if (_vcontrol_mode.flag_control_manual_enabled && !_vcontrol_mode.flag_control_rates_enabled) {
             /* manual/direct control */
             //print_message(_manual_control_setpoint);
-            this->height -= 0.5f*(_manual_control_setpoint.z-0.5f);
-            if(abs(this->height-vlocal_pos.z)>0.5f){
-                this->height+=0.5f*(_manual_control_setpoint.z-0.5f);
+            printf("Test = %f \n",(double)_manual_control_setpoint.z);
+
+            if(abs(this->height-vlocal_pos.z)<1.0f){
+                this->height -= 0.05f*(_manual_control_setpoint.z);
+            }else{
+                this->height = this->height-(this->height-vlocal_pos.z)*0.1f;
             }
             this->yawAngle += 0.1f*_manual_control_setpoint.r;
             if(this->yawAngle>(float)M_PI){
@@ -306,7 +310,7 @@ void UUVAttitudeControl::Run()
             if(this->yawAngle<(float)-M_PI){
                 this->yawAngle = this->yawAngle+(float)(2*M_PI);
             }
-            //printf("yaw angle = %f z positionDes = %f current z Position : %f \n",(double)this->yawAngle,(double)this->height,(double)vlocal_pos.z);
+//            printf("yaw angle = %f z positionDes = %f current z Position : %f \n",(double)this->yawAngle,(double)this->height,(double)vlocal_pos.z);
             vehicle_rates_setpoint_s _rates_setpointdesired {};
             vehicle_attitude_setpoint_s attitudeDesired;
             attitudeDesired.roll_body = 0;
@@ -314,7 +318,7 @@ void UUVAttitudeControl::Run()
             attitudeDesired.yaw_body = this->yawAngle;
             attitudeDesired.thrust_body[0] = _manual_control_setpoint.x;
             attitudeDesired.thrust_body[1] = _manual_control_setpoint.y;
-            attitudeDesired.thrust_body[2] = 1.0f*(this->height-vlocal_pos.z)-0.5f*vlocal_pos.vz;//@TODO has to be changed to barometer DATA
+            attitudeDesired.thrust_body[2] = 1.0f*(this->height-vlocal_pos.z)-0.5f*vlocal_pos.vz;
 
             control_attitude_geo(attitude, attitudeDesired, angular_velocity, _rates_setpointdesired);//@TODO has to be changed back for it to work.
 

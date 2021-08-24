@@ -13,11 +13,6 @@
 # @output MAIN6 motor 6 CCW, bow port vertical, propeller CW
 # @output MAIN7 motor 7 CCW, stern starboard vertical, propeller CW
 # @output MAIN8 motor 8 CCW, stern port vertical, propeller CCW
-#
-# @output AUX1 light of underwater Vehicle
-# @output AUX2 servo-camera direction
-# @output AUX3 feed-through of RC AUX3 channel
-# @output AUX4 feed-through of RC FLAPS channel
 
 # @maintainer Thies Lennart Alff <thies.lennart.alff@tuhh.de>
 #
@@ -47,8 +42,8 @@ param set-default BAT1_V_DIV 11.0
 param set-default BAT1_N_CELLS 4
 param set-default BAT_V_OFFS_CURR 0.33
 set PWM_OUT 12345678
-set PWM_AUX_OUT 12345678
+#set PWM_AUX_OUT 12345678
 # set MIXER IO_pass
 set MIXER vectored6dof
-set MIXER_AUX vectored6dof
+#set MIXER_AUX vectored6dof
 
