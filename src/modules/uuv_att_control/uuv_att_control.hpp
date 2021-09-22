@@ -134,7 +134,11 @@ private:
 		(ParamFloat<px4::params::UUV_DIRCT_ROLL>) _param_direct_roll,
 		(ParamFloat<px4::params::UUV_DIRCT_PITCH>) _param_direct_pitch,
 		(ParamFloat<px4::params::UUV_DIRCT_YAW>) _param_direct_yaw,
-		(ParamFloat<px4::params::UUV_DIRCT_THRUST>) _param_direct_thrust
+		(ParamFloat<px4::params::UUV_DIRCT_THRUST>) _param_direct_thrust,
+        // manual control parameter
+        (ParamFloat<px4::params::UUV_M_HGT_P_CTRL>) _param_manual_height_p_control,
+        (ParamFloat<px4::params::UUV_M_YAW_SPEED>) _param_yaw_speed_of_control,
+        (ParamFloat<px4::params::UUV_M_HGT_SPEED>) _param_height_speed_of_control
 	)
 
 	void Run() override;

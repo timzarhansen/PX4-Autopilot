@@ -299,11 +299,11 @@ void UUVAttitudeControl::Run()
 //            printf("Test = %f \n",(double)_manual_control_setpoint.z);
 
             if(abs(this->height-vlocal_pos.z)<1.0f){
-                this->height -= 0.1f*(_manual_control_setpoint.z-0.5f);
+                this->height -= _param_height_speed_of_control.get()*(_manual_control_setpoint.z-0.5f);
             }else{
-                this->height = this->height-(this->height-vlocal_pos.z)*0.1f;
+                this->height = this->height-(this->height-vlocal_pos.z)*_param_height_speed_of_control.get();
             }
-            this->yawAngle += 0.1f*_manual_control_setpoint.r;
+            this->yawAngle += _param_yaw_speed_of_control.get()*_manual_control_setpoint.r;
             if(this->yawAngle>(float)M_PI){
                 this->yawAngle = this->yawAngle-(float)(2*M_PI);
             }
@@ -318,7 +318,7 @@ void UUVAttitudeControl::Run()
             attitudeDesired.yaw_body = this->yawAngle;
             attitudeDesired.thrust_body[0] = _manual_control_setpoint.x;
             attitudeDesired.thrust_body[1] = _manual_control_setpoint.y;
-            attitudeDesired.thrust_body[2] = 1.0f*(this->height-vlocal_pos.z)-0.5f*vlocal_pos.vz;
+            attitudeDesired.thrust_body[2] = _param_manual_height_p_control.get()*(this->height-vlocal_pos.z)-0.5f*vlocal_pos.vz;
 
             control_attitude_geo(attitude, attitudeDesired, angular_velocity, _rates_setpointdesired);//@TODO has to be changed back for it to work.
 

@@ -142,3 +142,24 @@ PARAM_DEFINE_FLOAT(UUV_DIRCT_YAW, 0.0f);
  * @group UUV Attitude Control
  */
 PARAM_DEFINE_FLOAT(UUV_DIRCT_THRUST, 0.0f);
+
+/**
+ * manual P-Control height
+ *
+ * @group UUV Manual Control
+ */
+PARAM_DEFINE_FLOAT(UUV_M_HGT_P_CTRL, 1.0f);
+
+/**
+ * manual P-Control height
+ *
+ * @group UUV Manual Control
+ */
+PARAM_DEFINE_FLOAT(UUV_M_YAW_SPEED, 0.1f);
+
+/**
+ * manual P-Control height
+ *
+ * @group UUV Manual Control
+ */
+PARAM_DEFINE_FLOAT(UUV_M_HGT_SPEED, 0.1f);
