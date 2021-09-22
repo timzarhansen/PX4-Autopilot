@@ -296,10 +296,10 @@ void UUVAttitudeControl::Run()
 		if (_vcontrol_mode.flag_control_manual_enabled && !_vcontrol_mode.flag_control_rates_enabled) {
             /* manual/direct control */
             //print_message(_manual_control_setpoint);
-            //printf("Test = %f \n",(double)_manual_control_setpoint.z);
+//            printf("Test = %f \n",(double)_manual_control_setpoint.z);
 
             if(abs(this->height-vlocal_pos.z)<1.0f){
-                this->height -= 0.05f*(_manual_control_setpoint.z);
+                this->height -= 0.1f*(_manual_control_setpoint.z-0.5f);
             }else{
                 this->height = this->height-(this->height-vlocal_pos.z)*0.1f;
             }
