@@ -79,7 +79,12 @@ bool UUVAttitudeControl::init()
 	}
     this->height = 0;
 	this->yawAngle = 0;
-	return true;
+    this->integratorHeight = 0;
+    this->errorVectorIntegrated(0)=0;
+    this->errorVectorIntegrated(1)=0;
+    this->errorVectorIntegrated(2)=0;
+
+    return true;
 }
 
 void UUVAttitudeControl::parameters_update(bool force)
@@ -192,6 +197,15 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	e_R_vec(1) = e_R(0, 2);  /**< Pitch */
 	e_R_vec(2) = e_R(1, 0);  /**< Yaw   */
 
+    // Integrade the error over time.
+    errorVectorIntegrated(0)+=50.0f/250.0f*e_R(2, 1);  /**< Roll  */
+    errorVectorIntegrated(1)+=50.0f/250.0f*e_R(0, 2);  /**< Pitch */
+    errorVectorIntegrated(2)+=50.0f/250.0f*e_R(1, 0);  /**< Yaw   */
+
+
+
+
+
 	Vector3f omega{angular_velocity.xyz};
 	omega(0) -= roll_rate_desired;
 	omega(1) -= pitch_rate_desired;
@@ -206,6 +220,14 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	torques(0) = torques(0) - omega(0) * _param_roll_d.get();  /**< Roll  */
 	torques(1) = torques(1) - omega(1) * _param_pitch_d.get(); /**< Pitch */
 	torques(2) = torques(2) - omega(2) * _param_yaw_d.get();   /**< Yaw   */
+
+    /**< PID-Control */
+    torques(0) = torques(0) - errorVectorIntegrated(0) * _param_roll_i.get();  /**< Roll  */
+    torques(1) = torques(1) - errorVectorIntegrated(1) * _param_pitch_i.get(); /**< Pitch */
+    torques(2) = torques(2) - errorVectorIntegrated(2) * _param_yaw_i.get();   /**< Yaw   */
+
+
+
 
 	roll_u = torques(0);
 	pitch_u = torques(1);
@@ -318,9 +340,15 @@ void UUVAttitudeControl::Run()
             attitudeDesired.yaw_body = this->yawAngle;
             attitudeDesired.thrust_body[0] = _manual_control_setpoint.x;
             attitudeDesired.thrust_body[1] = _manual_control_setpoint.y;
-            attitudeDesired.thrust_body[2] = _param_manual_height_p_control.get()*(this->height-vlocal_pos.z)-0.5f*vlocal_pos.vz;
+            float errorInZ = this->height-vlocal_pos.z;
+            integratorHeight +=50.0f/250.0f*errorInZ;
+            attitudeDesired.thrust_body[2] = _param_manual_height_p_control.get()*errorInZ-_param_manual_height_d_control.get()*vlocal_pos.vz+integratorHeight*_param_manual_height_i_control.get();
 
-            control_attitude_geo(attitude, attitudeDesired, angular_velocity, _rates_setpointdesired);//@TODO has to be changed back for it to work.
+
+            //printf("Test = %f \n",(double)errorVectorIntegrated(0));
+
+
+            control_attitude_geo(attitude, attitudeDesired, angular_velocity, _rates_setpointdesired);
 
 
 

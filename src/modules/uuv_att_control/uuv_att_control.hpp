@@ -123,10 +123,13 @@ private:
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::UUV_ROLL_P>) _param_roll_p,
 		(ParamFloat<px4::params::UUV_ROLL_D>) _param_roll_d,
+        (ParamFloat<px4::params::UUV_ROLL_I>) _param_roll_i,
 		(ParamFloat<px4::params::UUV_PITCH_P>) _param_pitch_p,
 		(ParamFloat<px4::params::UUV_PITCH_D>) _param_pitch_d,
+        (ParamFloat<px4::params::UUV_PITCH_I>) _param_pitch_i,
 		(ParamFloat<px4::params::UUV_YAW_P>) _param_yaw_p,
 		(ParamFloat<px4::params::UUV_YAW_D>) _param_yaw_d,
+        (ParamFloat<px4::params::UUV_YAW_I>) _param_yaw_i,
 		// control/input modes
 		(ParamInt<px4::params::UUV_INPUT_MODE>) _param_input_mode,
 		(ParamInt<px4::params::UUV_SKIP_CTRL>) _param_skip_ctrl,
@@ -137,6 +140,8 @@ private:
 		(ParamFloat<px4::params::UUV_DIRCT_THRUST>) _param_direct_thrust,
         // manual control parameter
         (ParamFloat<px4::params::UUV_M_HGT_P_CTRL>) _param_manual_height_p_control,
+        (ParamFloat<px4::params::UUV_M_HGT_D_CTRL>) _param_manual_height_d_control,
+        (ParamFloat<px4::params::UUV_M_HGT_I_CTRL>) _param_manual_height_i_control,
         (ParamFloat<px4::params::UUV_M_YAW_SPEED>) _param_yaw_speed_of_control,
         (ParamFloat<px4::params::UUV_M_HGT_SPEED>) _param_height_speed_of_control
 	)
@@ -154,5 +159,7 @@ private:
 				  const vehicle_angular_velocity_s &angular_velocity, const vehicle_rates_setpoint_s &rates_setpoint);
 	void constrain_actuator_commands(float roll_u, float pitch_u, float yaw_u,
 					 float thrust_x, float thrust_y, float thrust_z);
-	float height,yawAngle;
+	float height,yawAngle,integratorHeight;
+    Vector3f errorVectorIntegrated;
+
 };

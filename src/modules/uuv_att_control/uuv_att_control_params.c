@@ -55,15 +55,21 @@
  *
  * @group UUV Attitude Control
  */
-PARAM_DEFINE_FLOAT(UUV_ROLL_P, 4.0f);
+PARAM_DEFINE_FLOAT(UUV_ROLL_P, 1.0f);
 
 /**
  * Roll differential gain
  *
  * @group UUV Attitude Control
  */
-PARAM_DEFINE_FLOAT(UUV_ROLL_D, 1.5f);
+PARAM_DEFINE_FLOAT(UUV_ROLL_D, 0.2f);
 
+/**
+ * Roll integral gain
+ *
+ * @group UUV Attitude Control
+ */
+PARAM_DEFINE_FLOAT(UUV_ROLL_I, 0.2f);
 
 // Pitch gains
 /**
@@ -71,15 +77,21 @@ PARAM_DEFINE_FLOAT(UUV_ROLL_D, 1.5f);
  *
  * @group UUV Attitude Control
  */
-PARAM_DEFINE_FLOAT(UUV_PITCH_P, 4.0f);
+PARAM_DEFINE_FLOAT(UUV_PITCH_P, 1.0f);
 
 /**
  * Pitch differential gain
  *
  * @group UUV Attitude Control
  */
-PARAM_DEFINE_FLOAT(UUV_PITCH_D, 2.0f);
+PARAM_DEFINE_FLOAT(UUV_PITCH_D, 0.2f);
 
+/**
+ * Pitch integral gain
+ *
+ * @group UUV Attitude Control
+ */
+PARAM_DEFINE_FLOAT(UUV_PITCH_I, 0.2f);
 
 // Yaw gains
 /**
@@ -87,15 +99,21 @@ PARAM_DEFINE_FLOAT(UUV_PITCH_D, 2.0f);
  *
  * @group UUV Attitude Control
  */
-PARAM_DEFINE_FLOAT(UUV_YAW_P, 4.0f);
+PARAM_DEFINE_FLOAT(UUV_YAW_P, 1.0f);
 
 /**
  * Yaw differential gain
  *
  * @group UUV Attitude Control
  */
-PARAM_DEFINE_FLOAT(UUV_YAW_D, 2.0f);
+PARAM_DEFINE_FLOAT(UUV_YAW_D, 0.2f);
 
+/**
+ * Yaw integral gain
+ *
+ * @group UUV Attitude Control
+ */
+PARAM_DEFINE_FLOAT(UUV_YAW_I, 0.0f);
 
 // Input Modes
 /**
@@ -149,6 +167,20 @@ PARAM_DEFINE_FLOAT(UUV_DIRCT_THRUST, 0.0f);
  * @group UUV Manual Control
  */
 PARAM_DEFINE_FLOAT(UUV_M_HGT_P_CTRL, 1.0f);
+
+/**
+ * manual P-Control height
+ *
+ * @group UUV Manual Control
+ */
+PARAM_DEFINE_FLOAT(UUV_M_HGT_I_CTRL, 0.2f);
+
+/**
+ * manual P-Control height
+ *
+ * @group UUV Manual Control
+ */
+PARAM_DEFINE_FLOAT(UUV_M_HGT_D_CTRL, 0.2f);
 
 /**
  * manual P-Control height
