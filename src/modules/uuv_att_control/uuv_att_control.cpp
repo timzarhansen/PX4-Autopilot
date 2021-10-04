@@ -198,13 +198,24 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	e_R_vec(2) = e_R(1, 0);  /**< Yaw   */
 
     // Integrade the error over time.
-    errorVectorIntegrated(0)+=50.0f/250.0f*e_R(2, 1);  /**< Roll  */
-    errorVectorIntegrated(1)+=50.0f/250.0f*e_R(0, 2);  /**< Pitch */
-    errorVectorIntegrated(2)+=50.0f/250.0f*e_R(1, 0);  /**< Yaw   */
+    // wind up effect reduction
+    if ((std::abs(errorVectorIntegrated(0)+=50.0f/250.0f*e_R(2, 1))*_param_roll_i.get())<0.3f){
+        errorVectorIntegrated(0)+=50.0f/250.0f*e_R(2, 1);  /**< Roll  */
+    }
+
+    if ((std::abs(errorVectorIntegrated(1)+=50.0f/250.0f*e_R(0, 2))*_param_pitch_i.get())<0.3f){
+        errorVectorIntegrated(1)+=50.0f/250.0f*e_R(0, 2);  /**< Pitch */
+    }
+
+    if ((std::abs(errorVectorIntegrated(2)+=50.0f/250.0f*e_R(1, 0))*_param_yaw_i.get())<0.1f){
+        errorVectorIntegrated(2)+=50.0f/250.0f*e_R(1, 0);  /**< Yaw   */
+    }
 
 
 
-
+//    printf("Test0 = %f \n",(double)errorVectorIntegrated(0));
+//    printf("Test1 = %f \n",(double)errorVectorIntegrated(1));
+//    printf("Test2 = %f \n",(double)errorVectorIntegrated(2));
 
 	Vector3f omega{angular_velocity.xyz};
 	omega(0) -= roll_rate_desired;
@@ -341,7 +352,10 @@ void UUVAttitudeControl::Run()
             attitudeDesired.thrust_body[0] = _manual_control_setpoint.x;
             attitudeDesired.thrust_body[1] = _manual_control_setpoint.y;
             float errorInZ = this->height-vlocal_pos.z;
-            integratorHeight +=50.0f/250.0f*errorInZ;
+            // wind up effect reduction
+            if ((std::abs(integratorHeight+50.0f/250.0f*errorInZ)*_param_manual_height_i_control.get())<0.3f){
+                integratorHeight +=50.0f/250.0f*errorInZ;
+            }
             attitudeDesired.thrust_body[2] = _param_manual_height_p_control.get()*errorInZ-_param_manual_height_d_control.get()*vlocal_pos.vz+integratorHeight*_param_manual_height_i_control.get();
 
 
