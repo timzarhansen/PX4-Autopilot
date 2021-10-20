@@ -195,3 +195,12 @@ PARAM_DEFINE_FLOAT(UUV_M_YAW_SPEED, 0.1f);
  * @group UUV Manual Control
  */
 PARAM_DEFINE_FLOAT(UUV_M_HGT_SPEED, 0.1f);
+
+/**
+ * control yaw vs direct feedthrough
+ *
+ * @group UUV Manual Control
+ * @value 0 use direct feedthrough for yaw
+ * @value 1 control yaw by controller(dependent on internal yaw measurement)
+ */
+PARAM_DEFINE_INT32(UUV_M_YAW_CTRL, 0);

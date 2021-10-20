@@ -94,4 +94,4 @@ PARAM_DEFINE_FLOAT(UUV_GAIN_Z_D, 0.2f);
  * @value 1 RelativeControl Mode
  * @group UUV Position Control
  */
-PARAM_DEFINE_INT32(UUV_REL_MODE, 1);
+PARAM_DEFINE_INT32(UUV_REL_MODE, 0);

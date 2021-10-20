@@ -143,7 +143,8 @@ private:
         (ParamFloat<px4::params::UUV_M_HGT_D_CTRL>) _param_manual_height_d_control,
         (ParamFloat<px4::params::UUV_M_HGT_I_CTRL>) _param_manual_height_i_control,
         (ParamFloat<px4::params::UUV_M_YAW_SPEED>) _param_yaw_speed_of_control,
-        (ParamFloat<px4::params::UUV_M_HGT_SPEED>) _param_height_speed_of_control
+        (ParamFloat<px4::params::UUV_M_HGT_SPEED>) _param_height_speed_of_control,
+        (ParamInt<px4::params::UUV_M_YAW_CTRL>) _param_manual_yaw_control_mode
 	)
 
 	void Run() override;
