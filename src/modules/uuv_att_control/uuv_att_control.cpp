@@ -193,16 +193,16 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 
     // Integrade the error over time.
     // wind up effect reduction
-    if (std::abs(errorVectorIntegrated(0) += 50.0f / 250.0f * e_R(2, 1)) < 0.1f) {
-        errorVectorIntegrated(0) += 50.0f / 250.0f * e_R(2, 1);  /**< Roll  */
+    if (std::abs(errorVectorIntegrated(0) + 0.2f * e_R(2, 1)) < 0.1f) {
+        errorVectorIntegrated(0) += 0.2f * e_R(2, 1);  /**< Roll  */
     }
 
-    if (std::abs(errorVectorIntegrated(1) += 50.0f / 250.0f * e_R(0, 2)) < 0.1f) {
-        errorVectorIntegrated(1) += 50.0f / 250.0f * e_R(0, 2);  /**< Pitch */
+    if (std::abs(errorVectorIntegrated(1) + 0.2f * e_R(0, 2)) < 0.1f) {
+        errorVectorIntegrated(1) += 0.2f * e_R(0, 2);  /**< Pitch */
     }
 
-    if (std::abs(errorVectorIntegrated(2) += 50.0f / 250.0f * e_R(1, 0)) < 0.1f) {
-        errorVectorIntegrated(2) += 50.0f / 250.0f * e_R(1, 0);  /**< Yaw   */
+    if (std::abs(errorVectorIntegrated(2) + 0.2f * e_R(1, 0)) < 0.1f) {
+        errorVectorIntegrated(2) += 0.2f * e_R(1, 0);  /**< Yaw   */
     }
 
 
