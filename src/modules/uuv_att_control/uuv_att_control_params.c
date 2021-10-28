@@ -204,3 +204,30 @@ PARAM_DEFINE_FLOAT(UUV_M_HGT_SPEED, 0.1f);
  * @value 1 control yaw by controller(dependent on internal yaw measurement)
  */
 PARAM_DEFINE_INT32(UUV_M_YAW_CTRL, 0);
+/**
+ *
+ * @group windup effect correction roll
+ */
+PARAM_DEFINE_FLOAT(UUV_WIND_ROLL, 0.2);
+/**
+ *
+ * @group windup effect correction pitch
+ */
+PARAM_DEFINE_FLOAT(UUV_WIND_PITCH, 0.2);
+/**
+ *
+ * @group windup effect correction yaw
+ */
+PARAM_DEFINE_FLOAT(UUV_WIND_YAW, 0.2);
+/**
+ *
+ * @group windup effect correction hgt
+ */
+PARAM_DEFINE_FLOAT(UUV_WIND_HGT, 0.2);
+/**
+ * how fast is manual control
+ *
+ * @group x y manual control speed
+ */
+PARAM_DEFINE_FLOAT(UUV_M_XY_SPEED, 1.0);
+

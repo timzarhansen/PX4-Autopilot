@@ -121,6 +121,7 @@ private:
 	perf_counter_t	_loop_perf; /**< loop performance counter */
 
 	DEFINE_PARAMETERS(
+        // control parameter
 		(ParamFloat<px4::params::UUV_ROLL_P>) _param_roll_p,
 		(ParamFloat<px4::params::UUV_ROLL_D>) _param_roll_d,
         (ParamFloat<px4::params::UUV_ROLL_I>) _param_roll_i,
@@ -130,7 +131,11 @@ private:
 		(ParamFloat<px4::params::UUV_YAW_P>) _param_yaw_p,
 		(ParamFloat<px4::params::UUV_YAW_D>) _param_yaw_d,
         (ParamFloat<px4::params::UUV_YAW_I>) _param_yaw_i,
-		// control/input modes
+        (ParamFloat<px4::params::UUV_WIND_ROLL>) _param_windup_roll,
+        (ParamFloat<px4::params::UUV_WIND_PITCH>) _param_windup_pitch,
+        (ParamFloat<px4::params::UUV_WIND_YAW>) _param_windup_yaw,
+        (ParamFloat<px4::params::UUV_WIND_HGT>) _param_windup_hgt,
+        // control/input modes
 		(ParamInt<px4::params::UUV_INPUT_MODE>) _param_input_mode,
 		(ParamInt<px4::params::UUV_SKIP_CTRL>) _param_skip_ctrl,
 		// direct access to inputs
@@ -144,7 +149,8 @@ private:
         (ParamFloat<px4::params::UUV_M_HGT_I_CTRL>) _param_manual_height_i_control,
         (ParamFloat<px4::params::UUV_M_YAW_SPEED>) _param_yaw_speed_of_control,
         (ParamFloat<px4::params::UUV_M_HGT_SPEED>) _param_height_speed_of_control,
-        (ParamInt<px4::params::UUV_M_YAW_CTRL>) _param_manual_yaw_control_mode
+        (ParamInt<px4::params::UUV_M_YAW_CTRL>) _param_manual_yaw_control_mode,
+        (ParamFloat<px4::params::UUV_M_XY_SPEED>) _param_xy_speed_of_control
 	)
 
 	void Run() override;
