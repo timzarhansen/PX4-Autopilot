@@ -251,12 +251,12 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 //    thrust_y = attitude_setpoint.thrust_body[1]-attitude_setpoint.thrust_body[1];
 //    thrust_z = attitude_setpoint.thrust_body[2]-attitude_setpoint.thrust_body[2];
 
-    printf("Roll = %f \n",(double)attitude_setpoint.roll_body);
-    printf("Pitch = %f \n",(double)attitude_setpoint.pitch_body);
-    printf("Yaw = %f \n",(double)attitude_setpoint.yaw_body);
-    printf("thrust1 = %f \n",(double)attitude_setpoint.thrust_body[0]);
-    printf("thrust2 = %f \n",(double)attitude_setpoint.thrust_body[1]);
-    printf("thrust3 = %f \n",(double)attitude_setpoint.thrust_body[2]);
+//    printf("Roll = %f \n",(double)attitude_setpoint.roll_body);
+//    printf("Pitch = %f \n",(double)attitude_setpoint.pitch_body);
+//    printf("Yaw = %f \n",(double)attitude_setpoint.yaw_body);
+//    printf("thrust1 = %f \n",(double)attitude_setpoint.thrust_body[0]);
+//    printf("thrust2 = %f \n",(double)attitude_setpoint.thrust_body[1]);
+//    printf("thrust3 = %f \n",(double)attitude_setpoint.thrust_body[2]);
 
 
     constrain_actuator_commands(roll_u, pitch_u, yaw_u, thrust_x, thrust_y, thrust_z);//thats the correct one
