@@ -19,7 +19,7 @@ ekf2 start &
 # Start UUV Attitude Controller.
 #
 uuv_att_control start
-uuv_pos_control start
+#uuv_pos_control start
 #
 # Start UUV Land Detector.
 #

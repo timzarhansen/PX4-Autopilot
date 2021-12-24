@@ -158,6 +158,7 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
      */
     Eulerf euler_angles(matrix::Quatf(attitude.q));
 
+
     float roll_u;
     float pitch_u;
     float yaw_u;
@@ -172,6 +173,8 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
     float roll_rate_desired = rates_setpoint.roll;
     float pitch_rate_desired = rates_setpoint.pitch;
     float yaw_rate_desired = rates_setpoint.yaw;
+
+
 
     /* get attitude setpoint rotational matrix */
     Dcmf rot_des = Eulerf(roll_body, pitch_body, yaw_body);
@@ -248,12 +251,21 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 //    thrust_y = attitude_setpoint.thrust_body[1]-attitude_setpoint.thrust_body[1];
 //    thrust_z = attitude_setpoint.thrust_body[2]-attitude_setpoint.thrust_body[2];
 
+    printf("Roll = %f \n",(double)attitude_setpoint.roll_body);
+    printf("Pitch = %f \n",(double)attitude_setpoint.pitch_body);
+    printf("Yaw = %f \n",(double)attitude_setpoint.yaw_body);
+    printf("thrust1 = %f \n",(double)attitude_setpoint.thrust_body[0]);
+    printf("thrust2 = %f \n",(double)attitude_setpoint.thrust_body[1]);
+    printf("thrust3 = %f \n",(double)attitude_setpoint.thrust_body[2]);
+
+
     constrain_actuator_commands(roll_u, pitch_u, yaw_u, thrust_x, thrust_y, thrust_z);//thats the correct one
 
     /* Geometric Controller END*/
 }
 
 void UUVAttitudeControl::Run() {
+
 
     if (should_exit()) {
         _vehicle_attitude_sub.unregisterCallback();
@@ -311,6 +323,7 @@ void UUVAttitudeControl::Run() {
 
     /* Manual Control mode (e.g. gamepad,...) - raw feedthrough no assistance */
     if (_manual_control_setpoint_sub.update(&_manual_control_setpoint)) {
+//        printf("Test4\n");
         // This should be copied even if not in manual mode. Otherwise, the poll(...) call will keep
         // returning immediately and this loop will eat up resources.
         // this is a stabilization control. Which means it holds the depth, while you can move in xy plane freely
@@ -321,9 +334,10 @@ void UUVAttitudeControl::Run() {
         _angular_velocity_sub.copy(&angular_velocity);
 
         if (_vcontrol_mode.flag_control_manual_enabled && !_vcontrol_mode.flag_control_rates_enabled) {
+//            printf("Test5\n");
             /* manual/direct control */
             //print_message(_manual_control_setpoint);
-//            printf("Test = %f \n",(double)_manual_control_setpoint.z);
+            //printf("Test = %f \n",(double)_manual_control_setpoint.z);
 
             if (abs(this->height - vlocal_pos.z) < 1.0f) {
                 this->height -= _param_height_speed_of_control.get() * (_manual_control_setpoint.z - 0.5f);
@@ -345,7 +359,7 @@ void UUVAttitudeControl::Run() {
 
 
             Eulerf euler_angles(matrix::Quatf(attitude.q));
-            //printf("1 = %f 2 = %f 3 = %f \n",(double)euler_angles.psi(),(double)euler_angles.theta(),(double)euler_angles.phi());
+//            printf("1 = %f 2 = %f 3 = %f \n",(double)euler_angles.psi(),(double)euler_angles.theta(),(double)euler_angles.phi());
             int controlModeYaw = _param_manual_yaw_control_mode.get();
             if ( controlModeYaw == 0) {
                 attitudeDesired.yaw_body =
@@ -367,7 +381,7 @@ void UUVAttitudeControl::Run() {
                                              integratorHeight * _param_manual_height_i_control.get();
 
 
-            //printf("Test = %f \n",(double)errorVectorIntegrated(0));
+//            printf("Test = %f \n",(double)errorVectorIntegrated(0));
 
 
             control_attitude_geo(attitude, attitudeDesired, angular_velocity, _rates_setpointdesired);
@@ -380,7 +394,7 @@ void UUVAttitudeControl::Run() {
         }
 
     }
-
+//    printf("Test6\n");
     _actuators.timestamp = hrt_absolute_time();
 
     /* Only publish if any of the proper modes are enabled */

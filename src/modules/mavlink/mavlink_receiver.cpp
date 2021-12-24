@@ -1420,7 +1420,7 @@ MavlinkReceiver::handle_message_set_attitude_target(mavlink_message_t *msg)
 
 		vehicle_status_s vehicle_status{};
 		_vehicle_status_sub.copy(&vehicle_status);
-
+//        printf("Test1: \n");
 		if (attitude) {
 			vehicle_attitude_setpoint_s attitude_setpoint{};
 
@@ -1432,6 +1432,8 @@ MavlinkReceiver::handle_message_set_attitude_target(mavlink_message_t *msg)
 			attitude_setpoint.pitch_body = euler.theta();
 			attitude_setpoint.yaw_body = euler.psi();
 
+
+
 			// TODO: review use case
 			attitude_setpoint.yaw_sp_move_rate = (type_mask & ATTITUDE_TARGET_TYPEMASK_BODY_YAW_RATE_IGNORE) ?
 							     NAN : attitude_target.body_yaw_rate;
@@ -1440,12 +1442,17 @@ MavlinkReceiver::handle_message_set_attitude_target(mavlink_message_t *msg)
 				fill_thrust(attitude_setpoint.thrust_body, vehicle_status.vehicle_type, attitude_target.thrust);
 
 			} else if (thrust_body) {
+                printf("hereIsAttitudeTarget = %f \n",(double)attitude_target.body_roll_rate);
 				attitude_setpoint.thrust_body[0] = attitude_target.thrust_body[0];
 				attitude_setpoint.thrust_body[1] = attitude_target.thrust_body[1];
 				attitude_setpoint.thrust_body[2] = attitude_target.thrust_body[2];
 			}
+// ############################################ MY  CHANGE TIM ############################################
+            attitude_setpoint.thrust_body[0] = attitude_target.body_roll_rate;
+            attitude_setpoint.thrust_body[1] = attitude_target.body_pitch_rate;
+            attitude_setpoint.thrust_body[2] = attitude_target.body_yaw_rate;
 
-			// publish offboard_control_mode
+            // publish offboard_control_mode
 			offboard_control_mode_s ocm{};
 			ocm.attitude = true;
 			ocm.timestamp = hrt_absolute_time();
