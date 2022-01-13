@@ -247,6 +247,18 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
     thrust_x = attitude_setpoint.thrust_body[0];
     thrust_y = attitude_setpoint.thrust_body[1];
     thrust_z = attitude_setpoint.thrust_body[2];
+//    printf("before thrust1 = %f \n",(double)thrust_x);
+//    printf("before thrust2 = %f \n",(double)thrust_y);
+//    printf("before thrust3 = %f \n",(double)thrust_z);
+    Vector3f thrustVector(thrust_x,thrust_y,thrust_z);
+    Dcmf rot_Of = Eulerf(euler_angles.phi(), euler_angles.theta(), 0);
+    thrustVector = rot_Of.transpose()*thrustVector;
+    thrust_x = thrustVector(0);
+    thrust_y = thrustVector(1);
+    thrust_z = thrustVector(2);
+//    printf("after thrust1 = %f \n",(double)thrust_x);
+//    printf("after thrust2 = %f \n",(double)thrust_y);
+//    printf("after thrust3 = %f \n",(double)thrust_z);
 //    thrust_x = attitude_setpoint.thrust_body[0]-attitude_setpoint.thrust_body[0];
 //    thrust_y = attitude_setpoint.thrust_body[1]-attitude_setpoint.thrust_body[1];
 //    thrust_z = attitude_setpoint.thrust_body[2]-attitude_setpoint.thrust_body[2];
