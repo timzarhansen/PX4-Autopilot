@@ -534,6 +534,10 @@ else
 			cyphal start
 		fi
 	fi
+	if param greater -s ZENOH_ENABLE 0
+	then
+		zenoh start
+	fi
 
 #
 # End of autostart.
