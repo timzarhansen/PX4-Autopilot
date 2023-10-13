@@ -73,7 +73,9 @@ bool UUVAttitudeControl::init()
 		PX4_ERR("callback registration failed");
 		return false;
 	}
-
+    this->errorVectorIntegrated(0) = 0;
+    this->errorVectorIntegrated(1) = 0;
+    this->errorVectorIntegrated(2) = 0;
 	return true;
 }
 
@@ -124,6 +126,20 @@ void UUVAttitudeControl::constrain_actuator_commands(float roll_u, float pitch_u
 	} else {
 		_vehicle_thrust_setpoint.xyz[0] = 0.0f;
 	}
+    if (PX4_ISFINITE(thrust_y)) {
+        thrust_x = math::constrain(thrust_x, -1.0f, 1.0f);
+        _vehicle_thrust_setpoint.xyz[0] = thrust_x;
+
+    } else {
+        _vehicle_thrust_setpoint.xyz[0] = 0.0f;
+    }
+    if (PX4_ISFINITE(thrust_z)) {
+        thrust_x = math::constrain(thrust_x, -1.0f, 1.0f);
+        _vehicle_thrust_setpoint.xyz[0] = thrust_x;
+
+    } else {
+        _vehicle_thrust_setpoint.xyz[0] = 0.0f;
+    }
 }
 
 void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude,
@@ -171,6 +187,7 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	e_R_vec(1) = e_R(0, 2);  /**< Pitch */
 	e_R_vec(2) = e_R(1, 0);  /**< Yaw   */
 
+
 	Vector3f omega{angular_velocity.xyz};
 	omega(0) -= roll_rate_desired;
 	omega(1) -= pitch_rate_desired;
@@ -190,10 +207,19 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	pitch_u = torques(1);
 	yaw_u = torques(2);
 
-	// take thrust as
-	thrust_x = attitude_setpoint.thrust_body[0];
-	thrust_y = attitude_setpoint.thrust_body[1];
-	thrust_z = attitude_setpoint.thrust_body[2];
+    // new i think thats better
+    Vector3f thrustVector(thrust_x,thrust_y,thrust_z);
+    Dcmf rot_Of = Eulerf(euler_angles.phi(), euler_angles.theta(), 0);
+    thrustVector = rot_Of.transpose()*thrustVector;
+    thrust_x = thrustVector(0);
+    thrust_y = thrustVector(1);
+    thrust_z = thrustVector(2);
+
+
+	// take thrust as old version
+//	thrust_x = attitude_setpoint.thrust_body[0];
+//	thrust_y = attitude_setpoint.thrust_body[1];
+//	thrust_z = attitude_setpoint.thrust_body[2];
 
 
 	constrain_actuator_commands(roll_u, pitch_u, yaw_u, thrust_x, thrust_y, thrust_z);
