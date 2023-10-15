@@ -73,9 +73,6 @@ bool UUVAttitudeControl::init()
 		PX4_ERR("callback registration failed");
 		return false;
 	}
-    this->errorVectorIntegrated(0) = 0;
-    this->errorVectorIntegrated(1) = 0;
-    this->errorVectorIntegrated(2) = 0;
 	return true;
 }
 
@@ -127,18 +124,18 @@ void UUVAttitudeControl::constrain_actuator_commands(float roll_u, float pitch_u
 		_vehicle_thrust_setpoint.xyz[0] = 0.0f;
 	}
     if (PX4_ISFINITE(thrust_y)) {
-        thrust_x = math::constrain(thrust_x, -1.0f, 1.0f);
-        _vehicle_thrust_setpoint.xyz[0] = thrust_x;
+        thrust_y = math::constrain(thrust_y, -1.0f, 1.0f);
+        _vehicle_thrust_setpoint.xyz[1] = thrust_y;
 
     } else {
-        _vehicle_thrust_setpoint.xyz[0] = 0.0f;
+        _vehicle_thrust_setpoint.xyz[1] = 0.0f;
     }
     if (PX4_ISFINITE(thrust_z)) {
-        thrust_x = math::constrain(thrust_x, -1.0f, 1.0f);
-        _vehicle_thrust_setpoint.xyz[0] = thrust_x;
+        thrust_z = math::constrain(thrust_z, -1.0f, 1.0f);
+        _vehicle_thrust_setpoint.xyz[2] = thrust_z;
 
     } else {
-        _vehicle_thrust_setpoint.xyz[0] = 0.0f;
+        _vehicle_thrust_setpoint.xyz[2] = 0.0f;
     }
 }
 
@@ -206,6 +203,11 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	roll_u = torques(0);
 	pitch_u = torques(1);
 	yaw_u = torques(2);
+
+
+    thrust_x = attitude_setpoint.thrust_body[0];
+    thrust_y = attitude_setpoint.thrust_body[1];
+    thrust_z = attitude_setpoint.thrust_body[2];
 
     // new i think thats better
     Vector3f thrustVector(thrust_x,thrust_y,thrust_z);

@@ -298,8 +298,8 @@ void VehicleAirData::Run()
 float VehicleAirData::PressureToAltitude(float pressure_pa, float temperature) const
 {
 	// calculate altitude using the hypsometric equation
-	static constexpr float T1 = 15.f - CONSTANTS_ABSOLUTE_NULL_CELSIUS; // temperature at base height in Kelvin
-	static constexpr float a = -6.5f / 1000.f; // temperature gradient in degrees per metre
+//	static constexpr float T1 = 15.f - CONSTANTS_ABSOLUTE_NULL_CELSIUS; // temperature at base height in Kelvin
+//	static constexpr float a = -6.5f / 1000.f; // temperature gradient in degrees per metre
 
 	// current pressure at MSL in kPa (QNH in hPa)
 	const float p1 = _param_sens_baro_qnh.get() * 0.1f;
@@ -316,8 +316,8 @@ float VehicleAirData::PressureToAltitude(float pressure_pa, float temperature) c
 	 * h = -------------------------------  + h1
 	 *                   a
 	 */
-	float altitude = (((powf((p / p1), (-(a * CONSTANTS_AIR_GAS_CONST) / CONSTANTS_ONE_G))) * T1) - T1) / a;
-
+//	float altitude = (((powf((p / p1), (-(a * CONSTANTS_AIR_GAS_CONST) / CONSTANTS_ONE_G))) * T1) - T1) / a;
+    float altitude = -((p-p1)*1000.0f)/(CONSTANTS_ONE_G*1000.0f);//calculation for water
 	return altitude;
 }
 

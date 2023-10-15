@@ -22,8 +22,9 @@ bmi055 -A -R 2 -s start
 bmi055 -G -R 2 -s start
 
 # Baro on internal SPI
-ms5611 -s start
-
+#ms5611 -s start
+# Baro on External BlueROBOTICS
+ms5837 -X start
 # internal compass
 ist8310 -I -R 10 start
 

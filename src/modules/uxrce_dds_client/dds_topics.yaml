@@ -47,6 +47,12 @@ publications:
   - topic: /fmu/out/vehicle_trajectory_waypoint_desired
     type: px4_msgs::msg::VehicleTrajectoryWaypoint
 
+  - topic: /fmu/out/sensor_baro
+    type: px4_msgs::msg::SensorBaro
+
+  - topic: /fmu/out/vehicle_air_data
+    type: px4_msgs::msg::VehicleAirData
+
 subscriptions:
 
   - topic: /fmu/in/offboard_control_mode
