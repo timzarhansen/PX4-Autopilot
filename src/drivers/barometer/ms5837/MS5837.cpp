@@ -313,15 +313,21 @@ int MS5837::_collect()
 
 				int64_t f2 = POW2(TEMP + 1500);
 				OFF2 += 7 * f2;
-				SENS2 += f2 << 2;
+//				SENS2 += f2 << 2;
+                SENS2 += 4 * f2;
 			}
 
 		} else if (TEMP >= 2000) {
-			T2 = 2 * ((int64_t)POW2(dT) >> 37);
+//			T2 = 2 * ((int64_t)POW2(dT) >> 37);
+//
+//			f = POW2((int64_t)TEMP - 2000);
+//			OFF2 = 1 * f >> 4;
+//			SENS2 = 0;
+            T2 = 2 * POW2((int64_t)dT) >> 37;
 
-			f = POW2((int64_t)TEMP - 2000);
-			OFF2 = 1 * f >> 4;
-			SENS2 = 0;
+            f = POW2((int64_t)TEMP - 2000) >> 4;
+            OFF2 = 3 * f >> 1;
+//            SENS2 = 0;
 		}
 
 		TEMP -= (int32_t)T2;
@@ -339,7 +345,7 @@ int MS5837::_collect()
 		sensor_baro_s sensor_baro{};
 		sensor_baro.timestamp_sample = timestamp_sample;
 		sensor_baro.device_id = get_device_id();
-		sensor_baro.pressure = P;
+		sensor_baro.pressure = P/10.0f;//was P only
 		sensor_baro.temperature = _last_temperature;
 		sensor_baro.error_count = perf_event_count(_comms_errors);
 		sensor_baro.timestamp = hrt_absolute_time();
