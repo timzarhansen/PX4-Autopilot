@@ -582,12 +582,6 @@ public:
 		    float throttle_trim, float pitch_limit_min, float pitch_limit_max, float target_climbrate,
 		    float target_sinkrate, float speed_deriv_forward, float hgt_rate, float hgt_rate_sp = NAN);
 
-	/**
-	 * @brief Initialize the control loop
-	 *
-	 */
-	void initialize(float altitude, float altitude_rate, float equivalent_airspeed, float eas_to_tas);
-
 	void resetIntegrals()
 	{
 		_control.resetIntegrals();
@@ -651,6 +645,20 @@ public:
 	float get_underspeed_ratio() { return _control.getRatioUndersped(); }
 
 private:
+	/**
+	 * @brief Initialize the control parameters
+	 *
+	 */
+	void initControlParams(float target_climbrate, float target_sinkrate, float eas_to_tas, float pitch_limit_max,
+			       float pitch_limit_min, float throttle_min, float throttle_setpoint_max, float throttle_trim);
+
+	/**
+	 * @brief Initialize the control loop
+	 *
+	 */
+	void initialize(const float altitude, const float altitude_rate, const float equivalent_airspeed,
+			float eas_to_tas);
+
 	TECSControl 			_control;			///< Control submodule.
 	TECSAirspeedFilter 		_airspeed_filter;		///< Airspeed filter submodule.
 	TECSAltitudeReferenceModel 	_altitude_reference_model;	///< Setpoint reference model submodule.
