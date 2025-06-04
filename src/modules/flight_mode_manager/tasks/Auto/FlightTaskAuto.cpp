@@ -156,17 +156,11 @@ bool FlightTaskAuto::update()
 		break;
 	}
 
-	if (_param_com_obs_avoid.get()) {
-		_obstacle_avoidance.updateAvoidanceDesiredSetpoints(_position_setpoint, _velocity_setpoint, (int)_type);
-		_obstacle_avoidance.injectAvoidanceSetpoints(_position_setpoint, _velocity_setpoint, _yaw_setpoint,
-				_yawspeed_setpoint);
-	}
-
 	_checkEmergencyBraking();
 	Vector3f waypoints[] = {_prev_wp, _position_setpoint, _next_wp};
 
 	if (isTargetModified()) {
-		// In case object avoidance has injected a new setpoint, we take this as the next waypoints
+		// In case the target has been modified, we take this as the next waypoints
 		waypoints[2] = _position_setpoint;
 	}
 
@@ -241,7 +235,7 @@ void FlightTaskAuto::_prepareLandSetpoints()
 	bool range_dist_available = PX4_ISFINITE(_dist_to_bottom);
 
 	if (range_dist_available && _dist_to_bottom <= _param_mpc_land_alt3.get()) {
-		vertical_speed = _param_mpc_land_crawl_speed.get();
+		vertical_speed = _param_mpc_land_crwl.get();
 	}
 
 	if (_type_previous != WaypointType::land) {
@@ -259,9 +253,15 @@ void FlightTaskAuto::_prepareLandSetpoints()
 		// Stick full up -1 -> stop, stick full down 1 -> double the speed
 		vertical_speed *= (1 - _sticks.getThrottleZeroCenteredExpo());
 
+		Vector2f sticks_xy = _sticks.getPitchRollExpo();
+
+		if (sticks_xy.longerThan(FLT_EPSILON)) {
+			// Ensure no unintended yawing when nudging horizontally during initial heading alignment
+			_land_heading = _yaw_sp_prev;
+		}
+
 		rcHelpModifyYaw(_land_heading);
 
-		Vector2f sticks_xy = _sticks.getPitchRollExpo();
 		Vector2f sticks_ne = sticks_xy;
 		Sticks::rotateIntoHeadingFrameXY(sticks_ne, _yaw, _land_heading);
 
@@ -280,12 +280,6 @@ void FlightTaskAuto::_prepareLandSetpoints()
 		} else {
 			max_speed = 0.f;
 			sticks_xy.setZero();
-		}
-
-		// If ground distance estimate valid (distance sensor) during nudging then limit horizontal speed
-		if (PX4_ISFINITE(_dist_to_bottom)) {
-			// Below 50cm no horizontal speed, above allow per meter altitude 0.5m/s speed
-			max_speed = math::max(0.f, math::min(max_speed, (_dist_to_bottom - .5f) * .5f));
 		}
 
 		_stick_acceleration_xy.setVelocityConstraint(max_speed);
@@ -452,7 +446,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 			_triplet_prev_wp(2) = -(_sub_triplet_setpoint.get().previous.alt - _reference_altitude);
 
 		} else {
-			_triplet_prev_wp = _position;
+			_triplet_prev_wp = _triplet_target;
 		}
 
 		_prev_was_valid = _sub_triplet_setpoint.get().previous.valid;
@@ -481,17 +475,6 @@ bool FlightTaskAuto::_evaluateTriplets()
 
 	if (triplet_update || (_current_state != previous_state) || _current_state == State::offtrack) {
 		_updateInternalWaypoints();
-	}
-
-	if (_param_com_obs_avoid.get()
-	    && _sub_vehicle_status.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
-		_obstacle_avoidance.updateAvoidanceDesiredWaypoints(_triplet_target, _yaw_setpoint, _yawspeed_setpoint,
-				_triplet_next_wp,
-				_sub_triplet_setpoint.get().next.yaw,
-				(float)NAN,
-				_weathervane.isActive(), _sub_triplet_setpoint.get().current.type);
-		_obstacle_avoidance.checkAvoidanceProgress(
-			_position, _triplet_prev_wp, _target_acceptance_radius, Vector2f(_closest_pt));
 	}
 
 	// set heading
@@ -623,7 +606,7 @@ bool FlightTaskAuto::_evaluateGlobalReference()
 	}
 
 	// init projection
-	_reference_position.initReference(ref_lat, ref_lon);
+	_reference_position.initReference(ref_lat, ref_lon, _time_stamp_current);
 
 	// check if everything is still finite
 	return PX4_ISFINITE(_reference_altitude) && PX4_ISFINITE(ref_lat) && PX4_ISFINITE(ref_lon);
@@ -632,29 +615,27 @@ bool FlightTaskAuto::_evaluateGlobalReference()
 State FlightTaskAuto::_getCurrentState()
 {
 	// Calculate the vehicle current state based on the Navigator triplets and the current position.
-	const Vector2f u_prev_to_target_xy = Vector2f(_triplet_target - _triplet_prev_wp).unit_or_zero();
-	const Vector2f pos_to_target_xy = Vector2f(_triplet_target - _position);
-	const Vector2f prev_to_pos_xy = Vector2f(_position - _triplet_prev_wp);
+	const Vector3f u_prev_to_target = (_triplet_target - _triplet_prev_wp).unit_or_zero();
+	const Vector3f prev_to_pos = _position - _triplet_prev_wp;
+	const Vector3f pos_to_target = _triplet_target - _position;
 	// Calculate the closest point to the vehicle position on the line prev_wp - target
-	const Vector2f closest_pt_xy = Vector2f(_triplet_prev_wp) + u_prev_to_target_xy * (prev_to_pos_xy *
-				       u_prev_to_target_xy);
-	_closest_pt = Vector3f(closest_pt_xy(0), closest_pt_xy(1), _triplet_target(2));
+	_closest_pt = _triplet_prev_wp + u_prev_to_target * (prev_to_pos * u_prev_to_target);
 
 	State return_state = State::none;
 
-	if (u_prev_to_target_xy.length() < FLT_EPSILON) {
+	if (!u_prev_to_target.longerThan(FLT_EPSILON)) {
 		// Previous and target are the same point, so we better don't try to do any special line following
 		return_state = State::none;
 
-	} else if (u_prev_to_target_xy * pos_to_target_xy < 0.0f) {
+	} else if (u_prev_to_target * pos_to_target < 0.0f) {
 		// Target is behind
 		return_state = State::target_behind;
 
-	} else if (u_prev_to_target_xy * prev_to_pos_xy < 0.0f && prev_to_pos_xy.longerThan(_target_acceptance_radius)) {
+	} else if (u_prev_to_target * prev_to_pos < 0.0f && prev_to_pos.longerThan(_target_acceptance_radius)) {
 		// Previous is in front
 		return_state = State::previous_infront;
 
-	} else if (Vector2f(_position - _closest_pt).longerThan(_target_acceptance_radius)) {
+	} else if ((_position - _closest_pt).longerThan(_target_acceptance_radius)) {
 		// Vehicle too far from the track
 		return_state = State::offtrack;
 

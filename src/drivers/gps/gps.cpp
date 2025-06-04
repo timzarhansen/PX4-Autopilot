@@ -73,7 +73,6 @@
 # include "devices/src/mtk.h"
 # include "devices/src/femtomes.h"
 # include "devices/src/nmea.h"
-# include "devices/src/sbf.h"
 
 #endif // CONSTRAINED_FLASH
 #include "devices/src/ubx.h"
@@ -86,7 +85,8 @@ using namespace device;
 using namespace time_literals;
 
 #define TIMEOUT_1HZ		1300	//!< Timeout time in mS, 1000 mS (1Hz) + 300 mS delta for error
-#define TIMEOUT_5HZ		500		//!< Timeout time in mS,  200 mS (5Hz) + 300 mS delta for error
+#define TIMEOUT_5HZ		500	//!< Timeout time in mS,  200 mS (5Hz) + 300 mS delta for error
+#define TIMEOUT_DUMP_ADD	450	//!< Additional time in mS to account for RTCM3 parsing and dumping
 #define RATE_MEASUREMENT_PERIOD 5_s
 
 enum class gps_driver_mode_t {
@@ -97,7 +97,6 @@ enum class gps_driver_mode_t {
 	EMLIDREACH,
 	FEMTOMES,
 	NMEA,
-	SBF
 };
 
 enum class gps_dump_comm_mode_t : int32_t {
@@ -361,8 +360,6 @@ GPS::GPS(const char *path, gps_driver_mode_t mode, GPSHelper::Interface interfac
 		case 5: _mode = gps_driver_mode_t::FEMTOMES; break;
 
 		case 6: _mode = gps_driver_mode_t::NMEA; break;
-
-		case 7: _mode = gps_driver_mode_t::SBF; break;
 #endif // CONSTRAINED_FLASH
 		}
 	}
@@ -480,6 +477,10 @@ int GPS::pollOrRead(uint8_t *buf, size_t buf_length, int timeout)
 	if (_interface == GPSHelper::Interface::UART) {
 		ret = _uart.readAtLeast(buf, buf_length, math::min(character_count, buf_length), timeout_adjusted);
 
+		if (ret > 0) {
+			_num_bytes_read += ret;
+		}
+
 // SPI is only supported on LInux
 #if defined(__PX4_LINUX)
 
@@ -547,8 +548,13 @@ void GPS::handleInjectDataTopic()
 		for (int instance = 0; instance < _orb_inject_data_sub.size(); instance++) {
 			const bool exists = _orb_inject_data_sub[instance].advertised();
 
-			if (exists) {
-				if (_orb_inject_data_sub[instance].copy(&msg)) {
+			if (exists && _orb_inject_data_sub[instance].copy(&msg)) {
+				/* Don't select the own RTCM instance. In case it has a lower
+				 * instance number, it will be selected and will be rejected
+				 * later in the code, resulting in no RTCM injection at all.
+				 */
+				if (msg.device_id != get_device_id()) {
+					// Only use the message if it is up to date
 					if ((hrt_absolute_time() - msg.timestamp) < 5_s) {
 						// Remember that we already did a copy on this instance.
 						already_copied = true;
@@ -704,13 +710,6 @@ GPS::run()
 	if (handle != PARAM_INVALID) {
 		param_get(handle, &heading_offset);
 		heading_offset = matrix::wrap_pi(math::radians(heading_offset));
-	}
-
-	handle = param_find("GPS_PITCH_OFFSET");
-	float pitch_offset = 0.f;
-
-	if (handle != PARAM_INVALID) {
-		param_get(handle, &pitch_offset);
 	}
 
 	int32_t gps_ubx_dynmodel = 7; // default to 7: airborne with <2g acceleration
@@ -886,11 +885,6 @@ GPS::run()
 			_helper = new GPSDriverNMEA(&GPS::callback, this, &_report_gps_pos, _p_report_sat_info, heading_offset);
 			set_device_type(DRV_GPS_DEVTYPE_NMEA);
 			break;
-
-		case gps_driver_mode_t::SBF:
-			_helper = new GPSDriverSBF(&GPS::callback, this, &_report_gps_pos, _p_report_sat_info, heading_offset, pitch_offset);
-			set_device_type(DRV_GPS_DEVTYPE_SBF);
-			break;
 #endif // CONSTRAINED_FLASH
 
 		default:
@@ -970,6 +964,12 @@ GPS::run()
 				/* The MB rover will wait as long as possible to compute a navigation solution,
 				 * possibly lowering the navigation rate all the way to 1 Hz while doing so. */
 				receive_timeout = TIMEOUT_1HZ;
+			}
+
+			if (_dump_communication_mode != gps_dump_comm_mode_t::Disabled) {
+				/* Dumping the RTCM3/UBX data requires additional parsing and storing of data via uORB.
+				 * Without additional time this can lead to timeouts. */
+				receive_timeout += TIMEOUT_DUMP_ADD;
 			}
 
 			while ((helper_ret = _helper->receive(receive_timeout)) > 0 && !should_exit()) {
@@ -1068,11 +1068,8 @@ GPS::run()
 				break;
 
 			case gps_driver_mode_t::FEMTOMES:
-				_mode = gps_driver_mode_t::SBF;
-				break;
-
-			case gps_driver_mode_t::SBF:
 			case gps_driver_mode_t::NMEA: // skip NMEA for auto-detection to avoid false positive matching
+
 #endif // CONSTRAINED_FLASH
 				_mode = gps_driver_mode_t::UBX;
 				px4_usleep(500000); // tried all possible drivers. Wait a bit before next round
@@ -1132,10 +1129,6 @@ GPS::print_status()
 
 	case gps_driver_mode_t::NMEA:
 		PX4_INFO("protocol: NMEA");
-		break;
-
-	case gps_driver_mode_t::SBF:
-		PX4_INFO("protocol: SBF");
 #endif // CONSTRAINED_FLASH
 
 	default:
@@ -1237,10 +1230,12 @@ GPS::publish()
 void
 GPS::publishSatelliteInfo()
 {
-	if (_instance == Instance::Main) {
+	if (_instance == Instance::Main || _is_gps_main_advertised.load()) {
 		if (_p_report_sat_info != nullptr) {
 			_report_sat_info_pub.publish(*_p_report_sat_info);
 		}
+
+		_is_gps_main_advertised.store(true);
 
 	} else {
 		//we don't publish satellite info for the secondary gps
@@ -1508,8 +1503,6 @@ GPS *GPS::instantiate(int argc, char *argv[], Instance instance)
 			} else if (!strcmp(myoptarg, "nmea")) {
 				mode = gps_driver_mode_t::NMEA;
 
-			} else if (!strcmp(myoptarg, "sbf")) {
-				mode = gps_driver_mode_t::SBF;
 #endif // CONSTRAINED_FLASH
 			} else {
 				PX4_ERR("unknown protocol: %s", myoptarg);

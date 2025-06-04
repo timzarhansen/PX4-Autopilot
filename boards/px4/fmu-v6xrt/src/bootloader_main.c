@@ -51,7 +51,24 @@ extern int sercon_main(int c, char **argv);
 
 void board_late_initialize(void)
 {
+<<<<<<<< HEAD:src/modules/ekf2/EKF/aid_sources/auxvel/auxvel_fusion.cpp
+	if (_auxvel_buffer) {
+		auxVelSample auxvel_sample_delayed;
+
+		if (_auxvel_buffer->pop_first_older_than(_time_delayed_us, &auxvel_sample_delayed)) {
+
+			resetEstimatorAidStatus(_aid_src_aux_vel);
+
+			updateHorizontalVelocityAidSrcStatus(auxvel_sample_delayed.time_us, auxvel_sample_delayed.vel, auxvel_sample_delayed.velVar, fmaxf(_params.auxvel_gate, 1.f), _aid_src_aux_vel);
+
+			if (isHorizontalAidingActive()) {
+				fuseHorizontalVelocity(_aid_src_aux_vel);
+			}
+		}
+	}
+========
 	sercon_main(0, NULL);
+>>>>>>>> mainPX4/release/1.16:boards/px4/fmu-v6xrt/src/bootloader_main.c
 }
 
 extern void sys_tick_handler(void);

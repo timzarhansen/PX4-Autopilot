@@ -43,7 +43,7 @@
 #include <px4_platform_common/events.h>
 
 Takeoff::Takeoff(Navigator *navigator) :
-	MissionBlock(navigator)
+	MissionBlock(navigator, vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF)
 {
 }
 
@@ -68,7 +68,7 @@ Takeoff::on_active()
 	} else if (is_mission_item_reached_or_completed() && !_navigator->get_mission_result()->finished) {
 		_navigator->get_mission_result()->finished = true;
 		_navigator->set_mission_result_updated();
-		_navigator->mode_completed(vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF);
+		_navigator->mode_completed(getNavigatorStateId());
 
 		position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
@@ -77,7 +77,8 @@ Takeoff::on_active()
 			_mission_item.nav_cmd = NAV_CMD_IDLE;
 
 		} else {
-			if (pos_sp_triplet->current.valid) {
+			if (pos_sp_triplet->current.valid
+			    && _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 				setLoiterItemFromCurrentPositionSetpoint(&_mission_item);
 
 			} else {

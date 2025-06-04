@@ -172,7 +172,7 @@ public:
 
 	static bool		serial_instance_exists(const char *device_name, Mavlink *self);
 
-	static bool		component_was_seen(int system_id, int component_id, Mavlink *self = nullptr);
+	static bool		component_was_seen(int system_id, int component_id, Mavlink &self);
 
 	static void		forward_message(const mavlink_message_t *msg, Mavlink *self);
 
@@ -212,6 +212,7 @@ public:
 		MAVLINK_MODE_GIMBAL,
 		MAVLINK_MODE_ONBOARD_LOW_BANDWIDTH,
 		MAVLINK_MODE_UAVIONIX,
+		MAVLINK_MODE_LOW_BANDWIDTH,
 		MAVLINK_MODE_COUNT
 	};
 
@@ -265,6 +266,9 @@ public:
 
 		case MAVLINK_MODE_ONBOARD_LOW_BANDWIDTH:
 			return "OnboardLowBandwidth";
+
+		case MAVLINK_MODE_LOW_BANDWIDTH:
+			return "Low Bandwidth";
 
 		case MAVLINK_MODE_UAVIONIX:
 			return "uAvionix";

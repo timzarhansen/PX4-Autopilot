@@ -45,17 +45,13 @@
 #include "mavlink_ftp.h"
 #include "mavlink_tests/mavlink_ftp_test.h"
 
-#ifndef MAVLINK_FTP_UNIT_TEST
 #include "mavlink_main.h"
-#else
-#include <mavlink.h>
-#endif
 
 using namespace time_literals;
 
 constexpr const char MavlinkFTP::_root_dir[];
 
-MavlinkFTP::MavlinkFTP(Mavlink *mavlink) :
+MavlinkFTP::MavlinkFTP(Mavlink &mavlink) :
 	_mavlink(mavlink)
 {
 	// initialize session
@@ -96,7 +92,7 @@ MavlinkFTP::_getServerSystemId()
 	return MavlinkFtpTest::serverSystemId;
 #else
 	// Not unit testing, use the real thing
-	return _mavlink->get_system_id();
+	return _mavlink.get_system_id();
 #endif
 }
 
@@ -108,7 +104,7 @@ MavlinkFTP::_getServerComponentId()
 	return MavlinkFtpTest::serverComponentId;
 #else
 	// Not unit testing, use the real thing
-	return _mavlink->get_component_id();
+	return _mavlink.get_component_id();
 #endif
 }
 
@@ -120,7 +116,7 @@ MavlinkFTP::_getServerChannel()
 	return MavlinkFtpTest::serverChannel;
 #else
 	// Not unit testing, use the real thing
-	return _mavlink->get_channel();
+	return _mavlink.get_channel();
 #endif
 }
 
@@ -180,7 +176,7 @@ MavlinkFTP::_process_request(
 #ifdef MAVLINK_FTP_UNIT_TEST
 			_utRcvMsgFunc(last_reply, _worker_data);
 #else
-			mavlink_msg_file_transfer_protocol_send_struct(_mavlink->get_channel(), last_reply);
+			mavlink_msg_file_transfer_protocol_send_struct(_mavlink.get_channel(), last_reply);
 #endif
 			return;
 		}
@@ -340,7 +336,7 @@ MavlinkFTP::_reply(mavlink_file_transfer_protocol_t *ftp_req)
 	// Unit test hook is set, call that instead
 	_utRcvMsgFunc(ftp_req, _worker_data);
 #else
-	mavlink_msg_file_transfer_protocol_send_struct(_mavlink->get_channel(), ftp_req);
+	mavlink_msg_file_transfer_protocol_send_struct(_mavlink.get_channel(), ftp_req);
 #endif
 
 }
@@ -403,17 +399,11 @@ MavlinkFTP::_workList(PayloadHeader *payload)
 				payload->data[offset++] = kDirentSkip;
 				*((char *)&payload->data[offset]) = '\0';
 				offset++;
-				payload->size = offset;
-				closedir(dp);
+				errorCode = kErrFailErrno;
 
-				return errorCode;
-			}
-
-			// FIXME: does this ever happen? I would assume readdir always sets errno.
-			// no more entries?
-			if (payload->offset != 0 && offset == 0) {
+			} else if (offset == 0) {
 				// User is requesting subsequent dir entries but there were none. This means the user asked
-				// to seek past EOF.
+				// to seek past EOF. This can happen with `payload->offset == 0` if the directory is empty.
 				errorCode = kErrEOF;
 			}
 
@@ -1055,8 +1045,8 @@ void MavlinkFTP::send()
 
 #ifndef MAVLINK_FTP_UNIT_TEST
 	// Skip send if not enough room
-	unsigned max_bytes_to_send = _mavlink->get_free_tx_buf();
-	PX4_DEBUG("MavlinkFTP::send max_bytes_to_send(%u) get_free_tx_buf(%u)", max_bytes_to_send, _mavlink->get_free_tx_buf());
+	unsigned max_bytes_to_send = _mavlink.get_free_tx_buf();
+	PX4_DEBUG("MavlinkFTP::send max_bytes_to_send(%u) get_free_tx_buf(%u)", max_bytes_to_send, _mavlink.get_free_tx_buf());
 
 	if (max_bytes_to_send < get_size()) {
 		return;
@@ -1164,7 +1154,7 @@ bool MavlinkFTP::_validatePathIsWritable(const char *path)
 	// Don't allow writes to system paths as they are in RAM
 	// Ideally we'd canonicalize the path (with 'realpath'), but it might not exist, so realpath() would fail.
 	// The next simpler thing is to check there's no reference to a parent dir.
-	if (strncmp(path, "/fs/microsd/", 12) != 0 || strstr(path, "/../") != nullptr) {
+	if (strncmp(path, CONFIG_BOARD_ROOT_PATH "/", 12) != 0 || strstr(path, "/../") != nullptr) {
 		PX4_ERR("Disallowing write to %s", path);
 		return false;
 	}

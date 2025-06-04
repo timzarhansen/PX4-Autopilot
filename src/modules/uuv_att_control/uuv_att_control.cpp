@@ -73,6 +73,7 @@ bool UUVAttitudeControl::init()
 		PX4_ERR("callback registration failed");
 		return false;
 	}
+
 	return true;
 }
 
@@ -123,20 +124,6 @@ void UUVAttitudeControl::constrain_actuator_commands(float roll_u, float pitch_u
 	} else {
 		_vehicle_thrust_setpoint.xyz[0] = 0.0f;
 	}
-    if (PX4_ISFINITE(thrust_y)) {
-        thrust_y = math::constrain(thrust_y, -1.0f, 1.0f);
-        _vehicle_thrust_setpoint.xyz[1] = thrust_y;
-
-    } else {
-        _vehicle_thrust_setpoint.xyz[1] = 0.0f;
-    }
-    if (PX4_ISFINITE(thrust_z)) {
-        thrust_z = math::constrain(thrust_z, -1.0f, 1.0f);
-        _vehicle_thrust_setpoint.xyz[2] = thrust_z;
-
-    } else {
-        _vehicle_thrust_setpoint.xyz[2] = 0.0f;
-    }
 }
 
 void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude,
@@ -151,16 +138,10 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	 */
 	Eulerf euler_angles(matrix::Quatf(attitude.q));
 
-	float roll_u;
-	float pitch_u;
-	float yaw_u;
-	float thrust_x;
-	float thrust_y;
-	float thrust_z;
-
-	float roll_body = attitude_setpoint.roll_body;
-	float pitch_body = attitude_setpoint.pitch_body;
-	float yaw_body = attitude_setpoint.yaw_body;
+	const Eulerf setpoint_euler_angles(matrix::Quatf(attitude_setpoint.q_d));
+	const float roll_body = setpoint_euler_angles(0);
+	const float pitch_body = setpoint_euler_angles(1);
+	const float yaw_body = setpoint_euler_angles(2);
 
 	float roll_rate_desired = rates_setpoint.roll;
 	float pitch_rate_desired = rates_setpoint.pitch;
@@ -184,7 +165,6 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	e_R_vec(1) = e_R(0, 2);  /**< Pitch */
 	e_R_vec(2) = e_R(1, 0);  /**< Yaw   */
 
-
 	Vector3f omega{angular_velocity.xyz};
 	omega(0) -= roll_rate_desired;
 	omega(1) -= pitch_rate_desired;
@@ -200,28 +180,14 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 	torques(1) = torques(1) - omega(1) * _param_pitch_d.get(); /**< Pitch */
 	torques(2) = torques(2) - omega(2) * _param_yaw_d.get();   /**< Yaw   */
 
-	roll_u = torques(0);
-	pitch_u = torques(1);
-	yaw_u = torques(2);
+	float roll_u = torques(0);
+	float pitch_u = torques(1);
+	float yaw_u = torques(2);
 
-
-    thrust_x = attitude_setpoint.thrust_body[0];
-    thrust_y = attitude_setpoint.thrust_body[1];
-    thrust_z = attitude_setpoint.thrust_body[2];
-
-    // new i think thats better
-    Vector3f thrustVector(thrust_x,thrust_y,thrust_z);
-    Dcmf rot_Of = Eulerf(euler_angles.phi(), euler_angles.theta(), 0);
-    thrustVector = rot_Of.transpose()*thrustVector;
-    thrust_x = thrustVector(0);
-    thrust_y = thrustVector(1);
-    thrust_z = thrustVector(2);
-
-
-	// take thrust as old version
-//	thrust_x = attitude_setpoint.thrust_body[0];
-//	thrust_y = attitude_setpoint.thrust_body[1];
-//	thrust_z = attitude_setpoint.thrust_body[2];
+	// take thrust as
+	float thrust_x = attitude_setpoint.thrust_body[0];
+	float thrust_y = attitude_setpoint.thrust_body[1];
+	float thrust_z = attitude_setpoint.thrust_body[2];
 
 
 	constrain_actuator_commands(roll_u, pitch_u, yaw_u, thrust_x, thrust_y, thrust_z);
@@ -262,9 +228,8 @@ void UUVAttitudeControl::Run()
 			_vehicle_rates_setpoint_sub.update(&_rates_setpoint);
 
 			if (input_mode == 1) { // process manual data
-				_attitude_setpoint.roll_body = _param_direct_roll.get();
-				_attitude_setpoint.pitch_body = _param_direct_pitch.get();
-				_attitude_setpoint.yaw_body = _param_direct_yaw.get();
+				Quatf attitude_setpoint(Eulerf(_param_direct_roll.get(), _param_direct_pitch.get(), _param_direct_yaw.get()));
+				attitude_setpoint.copyTo(_attitude_setpoint.q_d);
 				_attitude_setpoint.thrust_body[0] = _param_direct_thrust.get();
 				_attitude_setpoint.thrust_body[1] = 0.f;
 				_attitude_setpoint.thrust_body[2] = 0.f;

@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /**
- * @file batt_smbus.h
+ * @file batt_smbus.cpp
  *
  * Header for a battery monitor connected via SMBus (I2C).
  * Designed for BQ40Z50-R1/R2 and BQ40Z80
@@ -116,13 +116,11 @@ void BATT_SMBUS::RunImpl()
 
 	// Convert millivolts to volts.
 	new_report.voltage_v = ((float)result) / 1000.0f;
-	new_report.voltage_filtered_v = new_report.voltage_v;
 
 	// Read current.
 	ret |= _interface->read_word(BATT_SMBUS_CURRENT, result);
 
 	new_report.current_a = (-1.0f * ((float)(*(int16_t *)&result)) / 1000.0f) * _c_mult;
-	new_report.current_filtered_a = new_report.current_a;
 
 	// Read average current.
 	ret |= _interface->read_word(BATT_SMBUS_AVERAGE_CURRENT, result);
@@ -174,19 +172,19 @@ void BATT_SMBUS::RunImpl()
 
 		// Check if max lifetime voltage delta is greater than allowed.
 		if (_lifetime_max_delta_cell_voltage > BATT_CELL_VOLTAGE_THRESHOLD_FAILED) {
-			new_report.warning = battery_status_s::BATTERY_WARNING_CRITICAL;
+			new_report.warning = battery_status_s::WARNING_CRITICAL;
 
 		} else if (new_report.remaining > _low_thr) {
-			new_report.warning = battery_status_s::BATTERY_WARNING_NONE;
+			new_report.warning = battery_status_s::WARNING_NONE;
 
 		} else if (new_report.remaining > _crit_thr) {
-			new_report.warning = battery_status_s::BATTERY_WARNING_LOW;
+			new_report.warning = battery_status_s::WARNING_LOW;
 
 		} else if (new_report.remaining > _emergency_thr) {
-			new_report.warning = battery_status_s::BATTERY_WARNING_CRITICAL;
+			new_report.warning = battery_status_s::WARNING_CRITICAL;
 
 		} else {
-			new_report.warning = battery_status_s::BATTERY_WARNING_EMERGENCY;
+			new_report.warning = battery_status_s::WARNING_EMERGENCY;
 		}
 
 		new_report.interface_error = perf_event_count(_interface->_interface_errors);

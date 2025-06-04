@@ -162,6 +162,12 @@ public:
 	 * @see _vel_int
 	 */
 	void resetIntegral() { _vel_int.setZero(); }
+	void resetIntegralXY() { _vel_int.xy() = matrix::Vector2f(); }
+
+	/**
+	 * If set, the tilt setpoint is computed by assuming no vertical acceleration
+	 */
+	void decoupleHorizontalAndVecticalAcceleration(bool val) { _decouple_horizontal_and_vertical_acceleration = val; }
 
 	/**
 	 * If set, the tilt setpoint is computed by assuming no vertical acceleration
