@@ -1676,9 +1676,7 @@ void EKF2::PublishOdometry(const hrt_abstime &timestamp, const imuSample &imu_sa
 	_ekf.getVelocity().copyTo(odom.velocity);
 
 	// angular_velocity
-	const Vector3f rates{imu_sample.delta_ang / imu_sample.delta_ang_dt};
-	const Vector3f angular_velocity = rates - _ekf.getGyroBias();
-	angular_velocity.copyTo(odom.angular_velocity);
+	_ekf.getAngularVelocityAndResetAccumulator().copyTo(odom.angular_velocity);
 
 	// velocity covariances
 	_ekf.getVelocityVariance().copyTo(odom.velocity_variance);
@@ -2066,8 +2064,11 @@ void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
 		if (_airspeed_validated_sub.update(&airspeed_validated)) {
 
 			if (PX4_ISFINITE(airspeed_validated.true_airspeed_m_s)
-			    && (airspeed_validated.selected_airspeed_index > 0)
+			    && (airspeed_validated.airspeed_source > airspeed_validated_s::GROUND_MINUS_WIND)
 			   ) {
+
+				_ekf.setSyntheticAirspeed(airspeed_validated.airspeed_source == airspeed_validated_s::SYNTHETIC);
+
 				float cas2tas = 1.f;
 
 				if (PX4_ISFINITE(airspeed_validated.calibrated_airspeed_m_s)
