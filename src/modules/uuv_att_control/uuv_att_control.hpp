@@ -146,6 +146,8 @@ private:
 		(ParamFloat<px4::params::UUV_HGT_I>) _param_hgt_i,
 		(ParamFloat<px4::params::UUV_HGT_I_SPD>) _param_hgt_i_speed,
 		(ParamFloat<px4::params::UUV_HGT_STR>) _param_hgt_strength,
+		(ParamInt<px4::params::UUV_HGT_MODE>) _param_hgt_mode,
+
 		// gains for the different modes
 		(ParamFloat<px4::params::UUV_SGM_ROLL>) _param_sgm_roll,
 		(ParamFloat<px4::params::UUV_SGM_PITCH>) _param_sgm_pitch,

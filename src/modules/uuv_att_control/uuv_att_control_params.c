@@ -144,7 +144,14 @@ PARAM_DEFINE_FLOAT(UUV_HGT_I_SPD, 1.0f);
  */
 PARAM_DEFINE_FLOAT(UUV_HGT_STR, 1.0f);
 
-
+/**
+ * Hgt mode. Stabilize one depth based on local pose. Control hgt over arrows on control pad 0 = no hgt control, 1 = hgt control
+ *
+ * @group UUV Attitude Control
+ * @min 0
+ * @max 1
+ */
+PARAM_DEFINE_INT32(UUV_HGT_MODE, 0);
 
 
 // Gains for Manual Inputs in different Modes
@@ -291,3 +298,4 @@ PARAM_DEFINE_FLOAT(UUV_SP_MAX_AGE, 2.0f);
  * @max 1
  */
 PARAM_DEFINE_INT32(UUV_STICK_MODE, 0);
+

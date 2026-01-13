@@ -278,9 +278,16 @@ void UUVAttitudeControl::generate_attitude_setpoint(float dt)
 		_attitude_setpoint.thrust_body[0] = _manual_control_setpoint.throttle * throttle_manual_attitude_gain; // surge +x
 		_attitude_setpoint.thrust_body[1] = _manual_control_setpoint.roll * throttle_manual_attitude_gain; // sway +y
 		_attitude_setpoint.thrust_body[2] = -_manual_control_setpoint.pitch * throttle_manual_attitude_gain; // heave +z down
+	} else {
+		// Throttle only on +x (surge)
+		_attitude_setpoint.thrust_body[0] = _manual_control_setpoint.throttle * throttle_manual_attitude_gain;
+		_attitude_setpoint.thrust_body[1] = 0.f;
+		_attitude_setpoint.thrust_body[2] = 0.f;
+	}
 
+	if (_param_hgt_mode.get()==1)
+	{
 		printf("Following buttons are pressed:\n");
-
 
 		float maximumDistanceAllowed= 0.3f;
 		//Making sure, the difference between des hgt and actual hgt is not to high
@@ -326,18 +333,7 @@ void UUVAttitudeControl::generate_attitude_setpoint(float dt)
 		_attitude_setpoint.thrust_body[2] =_param_hgt_p.get() * errorInZ - _param_hgt_d.get()* _vehicle_local_position.az + _param_hgt_i.get()* hgtData[1];//PID values
 		printf("ThrustBody: %f \n",(double)_attitude_setpoint.thrust_body[2]);
 
-
-
-
-
-	} else {
-		// Throttle only on +x (surge)
-		_attitude_setpoint.thrust_body[0] = _manual_control_setpoint.throttle * throttle_manual_attitude_gain;
-		_attitude_setpoint.thrust_body[1] = 0.f;
-		_attitude_setpoint.thrust_body[2] = 0.f;
 	}
-
-
 
 
 
