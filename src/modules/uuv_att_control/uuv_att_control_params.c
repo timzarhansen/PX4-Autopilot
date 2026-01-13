@@ -103,6 +103,49 @@ PARAM_DEFINE_FLOAT(UUV_YAW_P, 4.0f);
  */
 PARAM_DEFINE_FLOAT(UUV_YAW_D, 2.0f);
 
+// hgt Control
+/**
+ * hgt proportional gain
+ *
+ * @group UUV Attitude Control
+ * @decimal 2
+ */
+PARAM_DEFINE_FLOAT(UUV_HGT_P, 1.0f);
+
+/**
+ * hgt differential gain
+ *
+ * @group UUV Attitude Control
+ * @decimal 2
+ */
+PARAM_DEFINE_FLOAT(UUV_HGT_D, 1.0f);
+
+/**
+ * hgt integrational gain
+ *
+ * @group UUV Attitude Control
+ * @decimal 2
+ */
+PARAM_DEFINE_FLOAT(UUV_HGT_I, 0.2f);
+
+/**
+ * hgt differential gain
+ *
+ * @group UUV Attitude Control
+ * @decimal 2
+ */
+PARAM_DEFINE_FLOAT(UUV_HGT_I_SPD, 1.0f);
+
+/**
+ * hgt strength from controller
+ *
+ * @group UUV Attitude Control
+ * @decimal 2
+ */
+PARAM_DEFINE_FLOAT(UUV_HGT_STR, 1.0f);
+
+
+
 
 // Gains for Manual Inputs in different Modes
 /**
