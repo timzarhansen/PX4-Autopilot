@@ -137,7 +137,7 @@ PARAM_DEFINE_FLOAT(UUV_HGT_I, 0.2f);
 PARAM_DEFINE_FLOAT(UUV_HGT_I_SPD, 1.0f);
 
 /**
- * hgt strength from controller
+ * hgt change strength from manual input
  *
  * @group UUV Attitude Control
  * @decimal 2

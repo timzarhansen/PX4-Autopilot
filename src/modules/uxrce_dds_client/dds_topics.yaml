@@ -235,5 +235,10 @@ subscriptions:
   - topic: /fmu/in/landing_gear
     type: px4_msgs::msg::LandingGear
 
+
+
+  - topic: /fmu/out/actuator_outputs
+    type: px4_msgs::msg::ActuatorOutputs
+
 # Create uORB::PublicationMulti
 subscriptions_multi:

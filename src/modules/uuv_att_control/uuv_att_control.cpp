@@ -287,7 +287,7 @@ void UUVAttitudeControl::generate_attitude_setpoint(float dt)
 
 	if (_param_hgt_mode.get()==1)
 	{
-		printf("Following buttons are pressed:\n");
+		// printf("Following buttons are pressed:\n");
 
 		float maximumDistanceAllowed= 0.3f;
 		//Making sure, the difference between des hgt and actual hgt is not to high
@@ -317,21 +317,21 @@ void UUVAttitudeControl::generate_attitude_setpoint(float dt)
 			}
 
 		}
-		printf("des hgt: %f \n",(double)hgtData[0]);
-		printf("current hgt: %f \n",(double)_vehicle_local_position.z);
+		// printf("des hgt: %f \n",(double)hgtData[0]);
+		// printf("current hgt: %f \n",(double)_vehicle_local_position.z);
 
 		float errorInZ = hgtData[0]-_vehicle_local_position.z;
-		printf("current z error: %f \n",(double)errorInZ);
+		// printf("current z error: %f \n",(double)errorInZ);
 
 		//make sure the integrational part is not to high
-		if (std::abs(hgtData[1] + 0.005f * errorInZ) < 1.0f) {
-			printf("increase integral part\n");
+		if (std::abs(hgtData[1] + 0.005f * errorInZ*_param_hgt_i_speed.get()) < 1.0f) {
+			// printf("increase integral part\n");
 			hgtData[1] = hgtData[1] + 0.005f * errorInZ*_param_hgt_i_speed.get();
 		}
-		printf("integrator part: %f \n",(double)hgtData[1]);
-		printf("Velocity z direction: %f \n",(double)_vehicle_local_position.az);
-		_attitude_setpoint.thrust_body[2] =_param_hgt_p.get() * errorInZ - _param_hgt_d.get()* _vehicle_local_position.az + _param_hgt_i.get()* hgtData[1];//PID values
-		printf("ThrustBody: %f \n",(double)_attitude_setpoint.thrust_body[2]);
+		// printf("integrator part: %f \n",(double)hgtData[1]);
+		// printf("Velocity z direction: %f \n",(double)_vehicle_local_position.az);
+		_attitude_setpoint.thrust_body[2] =_param_hgt_p.get() * errorInZ - _param_hgt_d.get()* _vehicle_local_position.vz + _param_hgt_i.get()* hgtData[1];//PID values
+		// printf("ThrustBody: %f \n",(double)_attitude_setpoint.thrust_body[2]);
 
 	}
 
