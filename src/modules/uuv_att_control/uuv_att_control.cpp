@@ -324,9 +324,9 @@ void UUVAttitudeControl::generate_attitude_setpoint(float dt)
 		// printf("current z error: %f \n",(double)errorInZ);
 
 		//make sure the integrational part is not to high
-		if (std::abs(hgtData[1] + 0.005f * errorInZ*_param_hgt_i_speed.get()) < 1.0f) {
+		if (std::abs(hgtData[1] + 0.005f * errorInZ * _param_hgt_i_speed.get()) < 1.0f) {
 			// printf("increase integral part\n");
-			hgtData[1] = hgtData[1] + 0.005f * errorInZ*_param_hgt_i_speed.get();
+			hgtData[1] = hgtData[1] + 0.005f * errorInZ * _param_hgt_i_speed.get();
 		}
 		// printf("integrator part: %f \n",(double)hgtData[1]);
 		// printf("Velocity z direction: %f \n",(double)_vehicle_local_position.az);
