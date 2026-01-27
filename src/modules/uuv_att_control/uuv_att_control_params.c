@@ -129,7 +129,7 @@ PARAM_DEFINE_FLOAT(UUV_HGT_D, 1.0f);
 PARAM_DEFINE_FLOAT(UUV_HGT_I, 0.2f);
 
 /**
- * hgt differential gain
+ * sum speed of error for integrational gain
  *
  * @group UUV Attitude Control
  * @decimal 2
@@ -143,6 +143,25 @@ PARAM_DEFINE_FLOAT(UUV_HGT_I_SPD, 1.0f);
  * @decimal 2
  */
 PARAM_DEFINE_FLOAT(UUV_HGT_STR, 1.0f);
+
+/**
+ * hgt rc-button up
+ *
+ * @group UUV Attitude Control
+ * @min 0
+ * @max 16
+ */
+PARAM_DEFINE_INT32(UUV_HGT_B_UP, 11);
+
+/**
+ * hgt rc-button down
+ *
+ * @group UUV Attitude Control
+ * @min 0
+ * @max 16
+ */
+PARAM_DEFINE_INT32(UUV_HGT_B_DOWN, 12);
+
 
 /**
  * Hgt mode. Stabilize one depth based on local pose. Control hgt over arrows on control pad 0 = no hgt control, 1 = hgt control

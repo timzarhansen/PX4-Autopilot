@@ -76,8 +76,9 @@ bool UUVAttitudeControl::init()
 		PX4_ERR("callback registration failed");
 		return false;
 	}
-	hgtData[0]=0.0f;
-	hgtData[1]=0.0f;
+
+	hgtData[0] = 0.0f;
+	hgtData[1] = 0.0f;
 	return true;
 }
 
@@ -235,13 +236,7 @@ void UUVAttitudeControl::control_attitude_geo(const vehicle_attitude_s &attitude
 
 	/* Geometric Controller END*/
 }
-// void printPressedButtons(uint16_t buttons) {
-// 	for (int i = 0; i < 16; ++i) {
-// 		if (buttons & (1 << i)) {
-// 			std::cout << "Button " << i << " is pressed." << std::endl;
-// 		}
-// 	}
-// }
+
 void UUVAttitudeControl::generate_attitude_setpoint(float dt)
 {
 	const bool js_heave_sway_mode = joystick_heave_sway_mode();
@@ -278,6 +273,7 @@ void UUVAttitudeControl::generate_attitude_setpoint(float dt)
 		_attitude_setpoint.thrust_body[0] = _manual_control_setpoint.throttle * throttle_manual_attitude_gain; // surge +x
 		_attitude_setpoint.thrust_body[1] = _manual_control_setpoint.roll * throttle_manual_attitude_gain; // sway +y
 		_attitude_setpoint.thrust_body[2] = -_manual_control_setpoint.pitch * throttle_manual_attitude_gain; // heave +z down
+
 	} else {
 		// Throttle only on +x (surge)
 		_attitude_setpoint.thrust_body[0] = _manual_control_setpoint.throttle * throttle_manual_attitude_gain;
@@ -285,54 +281,43 @@ void UUVAttitudeControl::generate_attitude_setpoint(float dt)
 		_attitude_setpoint.thrust_body[2] = 0.f;
 	}
 
-	if (_param_hgt_mode.get()==1)
-	{
-		// printf("Following buttons are pressed:\n");
+	if (_param_hgt_mode.get() == 1) {
 
-		float maximumDistanceAllowed= 0.3f;
+		float maximumDistanceAllowed = 0.3f;
+
 		//Making sure, the difference between des hgt and actual hgt is not to high
-		if (_vehicle_local_position.z-hgtData[0]>maximumDistanceAllowed)
-		{
-			hgtData[0]= _vehicle_local_position.z-maximumDistanceAllowed;
-		}else
-		{
-			if (_vehicle_local_position.z-hgtData[0]<-maximumDistanceAllowed)
-			{
-				// printf("Going in 3\n");
-				hgtData[0]= _vehicle_local_position.z+maximumDistanceAllowed;
+		if (_vehicle_local_position.z - hgtData[0] >= maximumDistanceAllowed) {
+			hgtData[0] = _vehicle_local_position.z - maximumDistanceAllowed;
+
+		} else {
+			if (_vehicle_local_position.z - hgtData[0] <= -maximumDistanceAllowed) {
+				hgtData[0] = _vehicle_local_position.z + maximumDistanceAllowed;
 			}
 		}
 
 		//change the desired hgt
-		if (_manual_control_setpoint.buttons & (1 << 12))//up
-		{
-			if (abs(hgtData[0] - 0.001f*_param_hgt_strength.get() - _vehicle_local_position.z) < maximumDistanceAllowed) {
-				hgtData[0] = hgtData[0] - 0.001f*_param_hgt_strength.get();
+		if (_manual_control_setpoint.buttons & (1 << _param_hgt_b_up.get())) { //up
+			if (abs(hgtData[0] - 0.001f * _param_hgt_strength.get() - _vehicle_local_position.z) < maximumDistanceAllowed) {
+				hgtData[0] = hgtData[0] - 0.001f * _param_hgt_strength.get();
 			}
 		}
-		if (_manual_control_setpoint.buttons & (1 << 13))//down
-		{
-			if (abs(hgtData[0] + 0.001f*_param_hgt_strength.get()- _vehicle_local_position.z) < maximumDistanceAllowed) {
-				hgtData[0] = hgtData[0] + 0.001f*_param_hgt_strength.get();
+
+		if (_manual_control_setpoint.buttons & (1 << _param_hgt_b_down.get())) { //down
+			if (abs(hgtData[0] + 0.001f * _param_hgt_strength.get() - _vehicle_local_position.z) < maximumDistanceAllowed) {
+				hgtData[0] = hgtData[0] + 0.001f * _param_hgt_strength.get();
 			}
 
 		}
-		// printf("des hgt: %f \n",(double)hgtData[0]);
-		// printf("current hgt: %f \n",(double)_vehicle_local_position.z);
 
-		float errorInZ = hgtData[0]-_vehicle_local_position.z;
-		// printf("current z error: %f \n",(double)errorInZ);
+		float errorInZ = hgtData[0] - _vehicle_local_position.z;
 
 		//make sure the integrational part is not to high
 		if (std::abs(hgtData[1] + 0.005f * errorInZ * _param_hgt_i_speed.get()) < 1.0f) {
-			// printf("increase integral part\n");
 			hgtData[1] = hgtData[1] + 0.005f * errorInZ * _param_hgt_i_speed.get();
 		}
-		// printf("integrator part: %f \n",(double)hgtData[1]);
-		// printf("Velocity z direction: %f \n",(double)_vehicle_local_position.az);
-		_attitude_setpoint.thrust_body[2] =_param_hgt_p.get() * errorInZ - _param_hgt_d.get()* _vehicle_local_position.vz + _param_hgt_i.get()* hgtData[1];//PID values
-		// printf("ThrustBody: %f \n",(double)_attitude_setpoint.thrust_body[2]);
 
+		_attitude_setpoint.thrust_body[2] = _param_hgt_p.get() * errorInZ - _param_hgt_d.get() * _vehicle_local_position.vz + _param_hgt_i.get() *
+						    hgtData[1];//PID values
 	}
 
 
