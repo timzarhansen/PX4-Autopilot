@@ -110,6 +110,18 @@ publications:
     type: px4_msgs::msg::GimbalDeviceAttitudeStatus
     rate_limit: 20.
 
+  - topic: /fmu/out/vehicle_thrust_setpoint
+    type: px4_msgs::msg::VehicleThrustSetpoint
+
+  - topic: /fmu/out/vehicle_torque_setpoint
+    type: px4_msgs::msg::VehicleTorqueSetpoint
+
+  - topic: /fmu/out/actuator_motors
+    type: px4_msgs::msg::ActuatorMotors
+
+  -  topic: /fmu/out/actuator_outputs
+     type: px4_msgs::msg::ActuatorOutputs
+
 # Create uORB::Publication
 subscriptions:
   - topic: /fmu/in/register_ext_component_request
@@ -225,6 +237,10 @@ subscriptions:
 
   - topic: /fmu/in/landing_gear
     type: px4_msgs::msg::LandingGear
+
+
+
+
 
 # Create uORB::PublicationMulti
 subscriptions_multi:
