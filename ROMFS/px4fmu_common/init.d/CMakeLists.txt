@@ -104,6 +104,13 @@ if(CONFIG_MODULES_UUV_ATT_CONTROL)
 	)
 endif()
 
+if(CONFIG_MODULES_USV_CONTROL)
+	px4_add_romfs_files(
+		rc.usv_apps
+		rc.usv_defaults
+	)
+endif()
+
 if(CONFIG_MODULES_VTOL_ATT_CONTROL)
 	px4_add_romfs_files(
 		rc.vtol_apps

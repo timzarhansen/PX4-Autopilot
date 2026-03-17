@@ -173,6 +173,13 @@ if(CONFIG_MODULES_UUV_ATT_CONTROL)
 	)
 endif()
 
+if(CONFIG_MODULES_USV_CONTROL)
+	px4_add_romfs_files(
+		# [60000, 61000] Surface Vehicles
+		60003_surface_constructor
+	)
+endif()
+
 if(CONFIG_MODULES_SPACECRAFT)
 	px4_add_romfs_files(
 		# [70000, 70999] Spacecraft
