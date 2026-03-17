@@ -1,0 +1,49 @@
+module_name: USV Control
+
+parameters:
+  - group: USV Control
+    definitions:
+      USV_THRUST_MAX:
+          description:
+            short: Maximum thrust
+            long: Maximum thrust output for the USV.
+          type: float
+          min: 0
+          max: 1
+          increment: 0.01
+          decimal: 2
+          default: 1.0
+
+      USV_YAW_RATE_MAX:
+          description:
+            short: Maximum yaw rate
+            long: Maximum yaw rate in degrees per second.
+          type: float
+          unit: deg/s
+          min: 0
+          max: 360
+          increment: 1
+          decimal: 1
+          default: 90.0
+
+      USV_YAW_EXPO:
+          description:
+            short: Yaw exponential
+            long: Yaw stick exponential for non-linear response.
+          type: float
+          min: 0
+          max: 1
+          increment: 0.01
+          decimal: 2
+          default: 0.5
+
+      USV_THRUST_EXPO:
+          description:
+            short: Thrust exponential
+            long: Thrust stick exponential for non-linear response.
+          type: float
+          min: 0
+          max: 1
+          increment: 0.01
+          decimal: 2
+          default: 0.5

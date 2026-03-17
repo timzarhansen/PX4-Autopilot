@@ -1,0 +1,5 @@
+menuconfig MODULES_USV_CONTROL
+	bool "usv_control"
+	default n
+	---help---
+		Enable support for USV manual control

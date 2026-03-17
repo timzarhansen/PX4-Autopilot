@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# Standard apps for USVs. Manual control.
+#
+# NOTE: Script variables are declared/initialized/unset in the rcS script.
+#
+
+#
+# Start Control Allocator
+#
+control_allocator start
+
+#
+# Start USV Control module.
+#
+usv_control start

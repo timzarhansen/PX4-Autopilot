@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# USV default parameters.
+#
+# NOTE: Script variables are declared/initialized/unset in the rcS script.
+#
+
+set VEHICLE_TYPE usv
+
+# MAV_TYPE_SURFACE_BOAT 14
+param set-default MAV_TYPE 14
+
+# Set vehicle type
+param set-default VEHICLE_TYPE 3
+
+# Disable preflight disarm for surface operation
+param set-default COM_DISARM_PRFLT -1
+param set-default CBRK_SUPPLY_CHK 894281
+
+# Default to external heading (mo cap or similar)
+param set-default ATT_EXT_HDG_M 2
+param set-default EKF2_EV_CTRL 15
+param set-default EKF2_EV_DELAY 5
+param set-default EKF2_GPS_CTRL 0
+param set-default EKF2_HGT_REF 3
+
+# Navigation parameters for surface vehicle
+param set-default NAV_ACC_RAD 2.0
+param set-default NAV_ALTITUDE_AGE 1000
+
+# Disable unnecessary failsafes for surface operation
+param set-default COM_ACT_FAIL_ACT 0
+param set-default COM_LOW_BAT_ACT 0
+param set-default NAV_DLL_ACT 0
+param set-default GF_ACTION 0
+param set-default NAV_RCL_ACT 1
