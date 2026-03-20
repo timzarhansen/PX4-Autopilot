@@ -39,8 +39,8 @@
 #include "gz/sim/rendering/RenderUtil.hh"
 #include "gz/sim/Util.hh"
 
-// #include "../waves/Wavefield.hh"
-#include "Wavefield.hh"
+#include "../waves/Wavefield.hh"
+// #include "Wavefield.hh"
 #include "WaveVisual.hh"
 
 using namespace gz;

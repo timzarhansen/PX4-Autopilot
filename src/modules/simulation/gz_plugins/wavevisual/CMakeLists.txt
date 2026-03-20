@@ -20,6 +20,6 @@ target_link_libraries(wavevisual PUBLIC
         PUBLIC ${GZ_PLUGIN_TARGET}
         PUBLIC ${GZ_SIM_TARGET}
         PUBLIC ${GZ_TRANSPORT_TARGET}
-        waves
+        PUBLIC waves
 )
 

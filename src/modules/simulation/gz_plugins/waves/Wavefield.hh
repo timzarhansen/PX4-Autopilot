@@ -147,7 +147,7 @@ namespace maritime
   /// <wavefield>
   ///   <topic>/gazebo/wavefield/parameters</topic>
   /// </wavefield>
-  class Wavefield
+  class __EXPORT Wavefield
   {
     /// \brief Constructor.
     public: Wavefield();
